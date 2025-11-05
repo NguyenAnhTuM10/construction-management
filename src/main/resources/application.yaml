@@ -1,4 +1,9 @@
 spring:
+  jwt:
+    secret: "mySecretKeyForJWTTokenGenerationAndValidation12345678901234567890"
+    access-token-expiration: 86400000        # 24 giờ (tính bằng milliseconds)
+    refresh-token-expiration: 604800000      # 7 ngày (tính bằng milliseconds)
+
   datasource:
     url: jdbc:mysql://localhost:3306/construction_db?useSSL=false&serverTimezone=UTC
     username: root
@@ -28,3 +33,19 @@ logging:
     root: INFO
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    disable-swagger-default-url: true
+    config-url: /construction/v3/api-docs/swagger-config
+    urls:
+      - name: Construction Management
+        url: /construction/v3/api-docs
+
+
+
+
+
