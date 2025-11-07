@@ -75,6 +75,7 @@ public class JwtTokenProvider {
     /**
      * Validate token
      */
+
     public boolean validateToken(String token) {
         try {
             Jwts.parser()
@@ -82,10 +83,14 @@ public class JwtTokenProvider {
                     .build()
                     .parseSignedClaims(token);
             return true;
+        } catch (ExpiredJwtException e) {
+            System.out.println("❌ Token hết hạn");
         } catch (JwtException | IllegalArgumentException e) {
-            return false;
+            System.out.println("❌ Token không hợp lệ: " + e.getMessage());
         }
+        return false;
     }
+
 
     /**
      * Check if token is refresh token

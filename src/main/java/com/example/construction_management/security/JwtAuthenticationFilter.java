@@ -34,9 +34,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
         try {
             String jwt = getJwtFromRequest(request);
+            System.out.println("JwtAuthenticationFilter triggered, token: " + jwt);
 
             if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
                 String username = tokenProvider.getUsernameFromToken(jwt);
+                System.out.println("Token hợp lệ - Username từ token: " + username);
 
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
                 UsernamePasswordAuthenticationToken authentication =
@@ -47,14 +49,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         );
 
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                // ✅ CỰC KỲ QUAN TRỌNG: set vào SecurityContext
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+                System.out.println("✅ Đã set authentication vào SecurityContextHolder");
+            } else {
+                System.out.println("❌ Token không hợp lệ hoặc thiếu Bearer header");
             }
         } catch (Exception ex) {
             logger.error("Could not set user authentication in security context", ex);
+            ex.printStackTrace();
         }
 
         filterChain.doFilter(request, response);
     }
+
 
     private String getJwtFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
