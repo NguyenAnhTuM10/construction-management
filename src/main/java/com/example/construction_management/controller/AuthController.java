@@ -2,8 +2,11 @@ package com.example.construction_management.controller;
 
 import com.example.construction_management.dto.APIResponse;
 import com.example.construction_management.dto.request.LoginRequest;
+import com.example.construction_management.dto.request.LogoutRequest;
+import com.example.construction_management.dto.request.RegisterRequest;
 import com.example.construction_management.dto.response.LoginResponse;
 import com.example.construction_management.dto.request.RefreshTokenRequest;
+import com.example.construction_management.dto.response.RegisterResponse;
 import com.example.construction_management.entity.User;
 import com.example.construction_management.exception.InvalidTokenException;
 import com.example.construction_management.exception.UserNotAuthenticatedException;
@@ -12,7 +15,9 @@ import com.example.construction_management.repository.UserRepository;
 import com.example.construction_management.security.JwtTokenProvider;
 import com.example.construction_management.service.AuthService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -81,10 +86,28 @@ public class AuthController {
         }
     }
 
+    // AuthController.java (thêm phương thức này)
+
+
+    @PostMapping("/register")
+    public ResponseEntity<APIResponse<RegisterResponse>> registerUser(
+            @Valid @RequestBody RegisterRequest registerRequest) {
+
+        RegisterResponse response = authService.register(registerRequest);
+
+        // Trả về 201 Created là chuẩn hơn cho hành động tạo tài nguyên
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(APIResponse.success(response, "User registered successfully"));
+
+        // Lưu ý: GlobalExceptionHandler sẽ xử lý UserAlreadyExistsException (400 Bad Request)
+    }
+
     // --- Endpoint Logout ---
     @PostMapping("/logout")
-    public ResponseEntity<APIResponse<Void>> logout() {
-        authService.logout();
+    public ResponseEntity<APIResponse<Void>> logout(@RequestBody LogoutRequest request) {
+        String token  = request.getRefreshToken();
+        authService.logout(token);
         return ResponseEntity.ok(APIResponse.success(null, "Logged out successfully"));
     }
 }

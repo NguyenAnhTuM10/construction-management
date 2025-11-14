@@ -5,7 +5,7 @@ package com.example.construction_management.handler;
 import com.example.construction_management.exception.InvalidTokenException;
 import com.example.construction_management.exception.UserNotFoundException;
 import com.example.construction_management.exception.UserNotAuthenticatedException;
-import com.example.construction_management.dto.APIResponse; // Giả định APIResponse nằm trong package 'dto'
+import com.example.construction_management.dto.APIResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;

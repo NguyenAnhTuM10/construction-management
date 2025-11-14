@@ -23,6 +23,9 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    @Column(nullable = false)
+    private String email;
+
     @ManyToOne
     @JoinColumn(name = "role_id", foreignKey = @ForeignKey(name = "FK_user_role"))
     private Role role;
@@ -30,4 +33,7 @@ public class User {
     @ManyToOne
     @JoinColumn(name = "employee_id", foreignKey = @ForeignKey(name = "FK_user_employee"))
     private Employee employee;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private RefreshToken refreshToken;
 }

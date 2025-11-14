@@ -27,7 +27,7 @@ public class DataInitializer implements ApplicationRunner {
     public void run(ApplicationArguments args) throws Exception {
 
         // --- 1️⃣ Khởi tạo 3 Role cơ bản nếu chưa có ---
-        List<String> defaultRoles = Arrays.asList("ADMIN", "SALE", "ACCOUNTANT");
+        List<String> defaultRoles = Arrays.asList("ADMIN", "SALE", "ACCOUNTANT","USER");
 
         for (String roleName : defaultRoles) {
             roleRepository.findByName(roleName)

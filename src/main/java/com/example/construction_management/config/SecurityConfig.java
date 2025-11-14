@@ -1,8 +1,5 @@
 package com.example.construction_management.config;
 
-
-
-
 import com.example.construction_management.security.CustomUserDetailsService;
 import com.example.construction_management.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
@@ -43,13 +40,29 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
+                        .requestMatchers("/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/public/**").permitAll()
-                        // Swagger
+
+                        // Swagger endpoints - PHẢI ĐẶT TRƯỚC các rule khác
                         .requestMatchers(
+                                // Context path version
+                                "/construction/v3/api-docs/**",
+                                "/construction/swagger-ui/**",
+                                "/construction/swagger-ui.html",
+                                "/construction/swagger-resources/**",
+                                "/construction/webjars/**",
+
+                                // Root path version
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
-                                "/swagger-ui.html"
+                                "/swagger-ui.html",
+                                "/swagger-resources/**",
+                                "/webjars/**",
+
+                                // Additional OpenAPI paths
+                                "/api-docs/**",
+                                "/swagger-config"
                         ).permitAll()
 
 
@@ -61,7 +74,6 @@ public class SecurityConfig {
 
                         // Accountant endpoints
                         .requestMatchers("/accountant/**").hasAnyRole("ADMIN", "ACCOUNTANT")
-
 
                         // All other requests need authentication
                         .anyRequest().authenticated()
