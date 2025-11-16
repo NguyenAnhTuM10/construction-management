@@ -24,8 +24,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     // Danh sách các path KHÔNG cần JWT authentication
     private static final List<String> PUBLIC_PATHS = Arrays.asList(
+            // ===== AUTH ENDPOINTS (QUAN TRỌNG!) =====
+            "/construction/auth/login",
+            "/construction/auth/register",
+            "/construction/auth/refresh",
             "/auth/",
+
+            // ===== PUBLIC ENDPOINTS =====
             "/public/",
+
+            // ===== SWAGGER/API DOCS =====
             "/v3/api-docs",
             "/swagger-ui",
             "/swagger-resources",

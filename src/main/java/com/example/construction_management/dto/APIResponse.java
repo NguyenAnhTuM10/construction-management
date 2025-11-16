@@ -1,12 +1,19 @@
 package com.example.construction_management.dto;
 
-
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
-@Setter
+import java.time.LocalDateTime;
+
+/**
+ * Generic API Response wrapper
+ */
 @Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class APIResponse<T> {
 
@@ -15,49 +22,66 @@ public class APIResponse<T> {
     private T data;
     private Integer statusCode;
 
-    // --- Constructors ---
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @Builder.Default
+    private LocalDateTime timestamp = LocalDateTime.now();
 
-    public APIResponse() {
-    }
-
-    public APIResponse(boolean success, String message, T data, Integer statusCode) {
-        this.success = success;
-        this.message = message;
-        this.data = data;
-        this.statusCode = statusCode;
-    }
-
-    public APIResponse(boolean success, String message, T data) {
-        this(success, message, data, null);
-    }
-
-    public APIResponse(boolean success, String message) {
-        this(success, message, null, null);
-    }
-
-    // --- Static helper methods (factory methods) ---
+    // ==================== SUCCESS ====================
 
     public static <T> APIResponse<T> success(T data, String message) {
-        return new APIResponse<>(true, message, data);
+        return APIResponse.<T>builder()
+                .success(true)
+                .message(message)
+                .data(data)
+                .build();
     }
 
     public static <T> APIResponse<T> success(T data) {
-        return new APIResponse<>(true, "Success", data);
+        return success(data, "Success");
     }
 
     public static <T> APIResponse<T> success(String message) {
-        return new APIResponse<>(true, message, null);
+        return APIResponse.<T>builder()
+                .success(true)
+                .message(message)
+                .build();
     }
 
+    public static <T> APIResponse<T> success() {
+        return success("Success");
+    }
+
+    // ==================== ERROR ====================
+
     public static <T> APIResponse<T> error(String message) {
-        return new APIResponse<>(false, message, null);
+        return APIResponse.<T>builder()
+                .success(false)
+                .message(message)
+                .build();
     }
 
     public static <T> APIResponse<T> error(String message, Integer statusCode) {
-        return new APIResponse<>(false, message, null, statusCode);
+        return APIResponse.<T>builder()
+                .success(false)
+                .message(message)
+                .statusCode(statusCode)
+                .build();
     }
 
-    // --- Getters and Setters ---
+    public static <T> APIResponse<T> errorWithData(String message, T data) {
+        return APIResponse.<T>builder()
+                .success(false)
+                .message(message)
+                .data(data)
+                .build();
+    }
 
+    public static <T> APIResponse<T> errorWithData(String message, T data, Integer statusCode) {
+        return APIResponse.<T>builder()
+                .success(false)
+                .message(message)
+                .data(data)
+                .statusCode(statusCode)
+                .build();
+    }
 }
-
