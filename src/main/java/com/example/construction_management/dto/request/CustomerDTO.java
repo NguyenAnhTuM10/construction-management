@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 
 @Data
 public class CustomerDTO {
-    private Integer id;
+    private Long id;
 
     @NotBlank(message = "Customer name is required")
     @Size(max = 100)
