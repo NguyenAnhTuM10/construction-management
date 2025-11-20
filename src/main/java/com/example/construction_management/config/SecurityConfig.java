@@ -45,51 +45,23 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        // ===== AUTH ENDPOINTS - PUBLIC (KHÔNG CẦN TOKEN) =====
-                        .requestMatchers(
-                                "/construction/auth/login",
-                                "/construction/auth/register",
-                                "/construction/auth/refresh",
-                                "/auth/**"
-                        ).permitAll()
+                        // PUBLIC ENDPOINTS
+                        .requestMatchers("/construction/auth/**", "/auth/**", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
 
-                        // ===== SWAGGER/API DOCS - PUBLIC =====
-                        .requestMatchers(
-                                // Context path version
-                                "/construction/v3/api-docs/**",
-                                "/construction/swagger-ui/**",
-                                "/construction/swagger-ui.html",
-                                "/construction/swagger-resources/**",
-                                "/construction/webjars/**",
-                                // Root path version
-                                "/v3/api-docs/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/swagger-resources/**",
-                                "/webjars/**",
-                                "/api-docs/**",
-                                "/swagger-config"
-                        ).permitAll()
+                        // ADMIN
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
 
-                        // ===== PUBLIC RESOURCES =====
-                        .requestMatchers("/public/**").permitAll()
+                        // SALE
+                        .requestMatchers("/sale/**").hasAnyRole("ADMIN", "SALE")
 
-                        // ===== ROLE-BASED ACCESS CONTROL =====
-                        // Admin endpoints
-                        .requestMatchers("/admin/**", "/construction/admin/**")
-                        .hasRole("ADMIN")
+                        // ACCOUNTANT
+                        .requestMatchers("/accountant/**").hasAnyRole("ADMIN", "ACCOUNTANT")
 
-                        // Sale endpoints
-                        .requestMatchers("/sale/**", "/construction/sale/**")
-                        .hasAnyRole("ADMIN", "SALE")
-
-                        // Accountant endpoints
-                        .requestMatchers("/accountant/**", "/construction/accountant/**")
-                        .hasAnyRole("ADMIN", "ACCOUNTANT")
-
-                        // ===== ALL OTHER REQUESTS NEED AUTHENTICATION =====
+                        // ALL OTHERS
                         .anyRequest().authenticated()
                 )
+
+
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

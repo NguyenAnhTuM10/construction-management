@@ -10,17 +10,23 @@ spring:
     password: 1234
     driver-class-name: com.mysql.cj.jdbc.Driver
 
+
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: create
     properties:
-      hibernate:
-        dialect: org.hibernate.dialect.MySQL8Dialect
-        format_sql: true
+      javax:
+        persistence:
+          schema-generation:
+            scripts:
+              action: create
+              create-target: src/main/resources/schema.sql
+            create-source: metadata
 
 
-  profiles:
+
+
+    profiles:
     active: dev
 
 server:

@@ -157,7 +157,7 @@ public class AuthService {
 
     public UserResponse getCurrentUserInfo(Authentication authentication) {
         User user = getCurrentUser(authentication);
-        return userMapper.toUserInfoResponse(user); // ← SỬ DỤNG MAPPER
+        return userMapper.toUserResponse(user); // ← SỬ DỤNG MAPPER
     }
 
 

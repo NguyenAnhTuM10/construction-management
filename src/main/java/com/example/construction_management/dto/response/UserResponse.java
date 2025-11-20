@@ -1,18 +1,16 @@
 package com.example.construction_management.dto.response;
 
-import lombok.*;
-import lombok.experimental.FieldDefaults;
+import lombok.Builder;
+import lombok.Data;
 
-@Getter
-@Setter
+@Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserResponse {
-    Long id;
-    String username;
-    String email;
-    String role; // Chỉ trả về tên role, không cần toàn bộ object
-    // Không bao gồm password và refreshToken vì lý do bảo mật
+    private Long id;
+    private String username;
+    private String email;
+    private String role;
+    private Long employeeId;
+    private String employeeName;
+    private String departmentName;
 }

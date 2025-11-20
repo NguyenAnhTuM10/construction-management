@@ -23,14 +23,14 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String email;
 
     @ManyToOne
     @JoinColumn(name = "role_id", foreignKey = @ForeignKey(name = "FK_user_role"))
     private Role role;
 
-    @ManyToOne
+    @OneToOne
     @JoinColumn(name = "employee_id", foreignKey = @ForeignKey(name = "FK_user_employee"))
     private Employee employee;
 

@@ -1,51 +1,20 @@
 package com.example.construction_management.mapper;
 
+
 import com.example.construction_management.dto.response.UserResponse;
 import com.example.construction_management.entity.User;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-/**
- * Mapper class để convert giữa User Entity và DTOs
- */
-@Component
-public class UserMapper {
+@Mapper(componentModel = "spring")
+public interface UserMapper {
 
-    /**
-     * Convert User Entity sang UserInfoResponse DTO
-     *
-     * @param user User entity
-     * @return UserInfoResponse DTO (không chứa password và refresh token)
-     */
-    public UserResponse toUserInfoResponse(User user) {
-        if (user == null) {
-            return null;
-        }
+    @Mapping(source = "role.name", target = "role")
+    @Mapping(source = "employee.id", target = "employeeId")
+    @Mapping(source = "employee.name", target = "employeeName")
+    @Mapping(source = "employee.department.name", target = "departmentName")
+    UserResponse toUserResponse(User user);
 
-        return UserResponse.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .email(user.getEmail())
-                .role(user.getRole() != null ? user.getRole().getName() : null)
-                .build();
-    }
 
-    /**
-     * Convert User Entity sang UserInfoResponse với thông tin Employee (nếu có)
-     * Mở rộng cho tương lai khi cần thêm thông tin Employee
-     */
-    public UserResponse toUserInfoResponseWithEmployee(User user) {
-        if (user == null) {
-            return null;
-        }
 
-        UserResponse response = toUserInfoResponse(user);
-
-        // TODO: Thêm logic map Employee info nếu cần
-        // if (user.getEmployee() != null) {
-        //     response.setEmployeeId(user.getEmployee().getId());
-        //     response.setEmployeeName(user.getEmployee().getName());
-        // }
-
-        return response;
-    }
 }

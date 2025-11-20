@@ -18,24 +18,23 @@ import java.util.Collections;
 import java.util.List;
 
 
-@RequiredArgsConstructor
 @Service
+@RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
 
-
-
     @Override
     @Transactional
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
-        return org.springframework.security.core.userdetails.User
-                .withUsername(user.getUsername())
+        return org.springframework.security.core.userdetails.User.builder()
+                .username(user.getUsername())
                 .password(user.getPassword())
-                .authorities(getAuthorities(user))
+                .authorities(getAuthorities(user))   // <--- DÙNG METHOD CHUẨN
                 .accountExpired(false)
                 .accountLocked(false)
                 .credentialsExpired(false)
@@ -48,9 +47,10 @@ public class CustomUserDetailsService implements UserDetailsService {
             return Collections.emptyList();
         }
 
-        String roleName = user.getRole().getName();
+        String roleName = user.getRole().getName().toUpperCase();
+
         return Collections.singletonList(
-                new SimpleGrantedAuthority("ROLE_" + roleName.toUpperCase())
+                new SimpleGrantedAuthority("ROLE_" + roleName)
         );
     }
 }

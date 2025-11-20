@@ -41,6 +41,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<APIResponse<LoginResponse>> login(@RequestBody LoginRequest loginRequest)
     {
+
         LoginResponse loginResponse = authService.login(loginRequest);
 
         return ResponseEntity.ok(APIResponse.success(loginResponse, "Login Successfully"));
@@ -70,7 +71,7 @@ public class AuthController {
         try {
             // Lấy Authentication object từ context tại Controller
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            System.out.println(authentication);
+            System.out.println("granted: " + authentication.getAuthorities());
             // Chuyển đối tượng Authentication cho Service xử lý
             User user = authService.getCurrentUser(authentication);
 

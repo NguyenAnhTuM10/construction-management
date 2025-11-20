@@ -115,12 +115,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<APIResponse<Void>> handleRuntimeException(RuntimeException ex) {
         log.error("Unexpected error occurred", ex); // Dùng log framework
 
-        String message = "An unexpected server error occurred.";
+
 
 
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(APIResponse.error(message));
+                .body(APIResponse.error(ex.getMessage()));
     }
 }
 
