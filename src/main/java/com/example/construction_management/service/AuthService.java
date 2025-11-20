@@ -10,7 +10,11 @@ import com.example.construction_management.dto.response.UserResponse;
 import com.example.construction_management.entity.RefreshToken;
 import com.example.construction_management.entity.Role;
 import com.example.construction_management.entity.User;
-import com.example.construction_management.exception.*;
+// Import các class exception mới
+import com.example.construction_management.exception.BusinessException;
+import com.example.construction_management.exception.ErrorCode;
+// Loại bỏ các exception cũ: InvalidTokenException, UserNotAuthenticatedException, UserNotFoundException...
+
 import com.example.construction_management.mapper.UserMapper;
 import com.example.construction_management.repository.RefreshTokenRepository;
 import com.example.construction_management.repository.RoleRepository;
@@ -18,7 +22,6 @@ import com.example.construction_management.repository.UserRepository;
 import com.example.construction_management.security.JwtTokenProvider;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.apache.catalina.Authenticator;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -45,88 +48,84 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final UserMapper userMapper;
 
-    // Không cần final vì được gán giá trị sau khi construct
+
+    public LoginResponse login(LoginRequest loginRequest) {
+
+        // 1. Thực hiện xác thực.
+        // LƯU Ý: Nếu xác thực thất bại (sai pass/user), Spring Security sẽ ném BadCredentialsException,
+        // GlobalExceptionHandler sẽ bắt lỗi này và ánh xạ sang ErrorCode.PASSWORD_INVALID.
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        loginRequest.getUsername(),
+                        loginRequest.getPassword()
+                )
+        );
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        // Generate tokens
+        String accessToken = tokenProvider.generateAccessToken(authentication);
+        String refreshToken = tokenProvider.generateRefreshToken(authentication);
+
+        // 2. Lấy thông tin người dùng. Nếu Auth thành công mà User không tồn tại (rất hiếm)
+        User user = userRepository.findByUsername(loginRequest.getUsername())
+                // ✅ Thay thế RuntimeException bằng BusinessException
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        // 3. Lưu Refresh Token
+        saveRefreshToken(user, refreshToken);
+
+        String roleName = user.getRole() != null ? user.getRole().getName() : "UNKNOWN";
+
+        LoginResponse response = LoginResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .username(user.getUsername())
+                .role(roleName)
+                .build();
+
+        return response;
+    }
 
 
-        public LoginResponse login(LoginRequest loginRequest) {
-
-                Authentication authentication = authenticationManager.authenticate(
-                        new UsernamePasswordAuthenticationToken(
-                                loginRequest.getUsername(),
-                                loginRequest.getPassword()
-                        )
-                );
-
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-
-                // Generate tokens
-                String accessToken = tokenProvider.generateAccessToken(authentication);
-                String refreshToken = tokenProvider.generateRefreshToken(authentication);
-
-
-
-                // Get user info
-                User user = userRepository.findByUsername(loginRequest.getUsername())
-                        .orElseThrow(() -> new RuntimeException("User not found"));
-
-            // **LOGIC MỚI: LƯU REFRESH TOKEN VÀO DB**
-            saveRefreshToken(user, refreshToken);
-
-                String roleName = user.getRole() != null ? user.getRole().getName() : "UNKNOWN";
-
-
-                LoginResponse response = LoginResponse.builder()
-                        .accessToken(accessToken)
-                        .refreshToken(refreshToken)
-                        .username(user.getUsername())
-                        .role(roleName)
-                        .build();
-
-                return response;
-
-
-        }
-
-
-
-    // 1. Logic Refresh Token
-    // AuthService.java (Phương thức refreshToken)
-
-    // --- 2. Refresh Token (Thêm logic kiểm tra và Revoke) ---
+    // --- 2. Refresh Token (Sử dụng BusinessException) ---
     public LoginResponse refreshToken(RefreshTokenRequest request) {
         String oldRefreshTokenString = request.getRefreshToken();
 
         // 1. Validate token cú pháp & loại token
         if (!tokenProvider.validateToken(oldRefreshTokenString) || !tokenProvider.isRefreshToken(oldRefreshTokenString)) {
-            throw new InvalidTokenException("Invalid or expired refresh token");
+            // ✅ Thay thế InvalidTokenException
+            throw new BusinessException(ErrorCode.USER_UNAUTHENTICATED);
         }
 
-        // **LOGIC MỚI: TÌM TOKEN TRONG DB VÀ KIỂM TRA REVOKED/EXPIRY**
+        // 2. TÌM TOKEN TRONG DB VÀ KIỂM TRA REVOKED/EXPIRY
         RefreshToken oldRefreshTokenEntity = refreshTokenRepository.findByToken(oldRefreshTokenString)
-                .orElseThrow(() -> new InvalidTokenException("Refresh token not found in database."));
+                // ✅ Thay thế InvalidTokenException
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_UNAUTHENTICATED));
 
         if (oldRefreshTokenEntity.isRevoked() || oldRefreshTokenEntity.getExpiryDate().isBefore(Instant.now())) {
-            throw new InvalidTokenException("Refresh token has been revoked or expired (Database check).");
+            // ✅ Thay thế InvalidTokenException
+            throw new BusinessException(ErrorCode.USER_UNAUTHENTICATED);
         }
 
-        // 2. Get username và Tải UserDetails
+        // 3. Get username và Tải UserDetails
         String username = tokenProvider.getUsernameFromToken(oldRefreshTokenString);
         UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-        User user = oldRefreshTokenEntity.getUser(); // Dùng User từ Entity
+        User user = oldRefreshTokenEntity.getUser();
 
-        // 3. TẠO Authentication thủ công
+        // 4. TẠO Authentication thủ công
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 userDetails,
                 null,
                 userDetails.getAuthorities()
         );
 
-        // 4. Generate new tokens
+        // 5. Generate new tokens
         String newAccessToken = tokenProvider.generateAccessToken(authentication);
         String newRefreshTokenString = tokenProvider.generateRefreshToken(authentication);
 
-        // **LOGIC MỚI: REVOKE TOKEN CŨ VÀ LƯU TOKEN MỚI**
+        // 6. REVOKE TOKEN CŨ VÀ LƯU TOKEN MỚI
         oldRefreshTokenEntity.setRevoked(true); // Vô hiệu hóa token cũ
         refreshTokenRepository.save(oldRefreshTokenEntity);
 
@@ -142,45 +141,49 @@ public class AuthService {
                 .build();
     }
 
-    // 2. Logic Get Current User Info
+    // --- 3. Get Current User Info (Sử dụng BusinessException) ---
     public User getCurrentUser(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()
                 || authentication.getPrincipal().equals("anonymousUser")) {
-            throw new UserNotAuthenticatedException("User not authenticated");
+            // ✅ Thay thế UserNotAuthenticatedException
+            throw new BusinessException(ErrorCode.USER_UNAUTHENTICATED);
         }
 
         String username = authentication.getName();
 
         return userRepository.findByUsername(username)
-                .orElseThrow(() -> new UserNotFoundException("User not found in database: " + username));
+                // ✅ Thay thế UserNotFoundException
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
     }
 
     public UserResponse getCurrentUserInfo(Authentication authentication) {
         User user = getCurrentUser(authentication);
-        return userMapper.toUserResponse(user); // ← SỬ DỤNG MAPPER
+        return userMapper.toUserResponse(user);
     }
 
-
+    // --- 4. Register (Sử dụng BusinessException) ---
     public RegisterResponse register(RegisterRequest registerRequest) {
 
         // 1. Kiểm tra username/email đã tồn tại chưa
         if (userRepository.existsByUsername(registerRequest.getUsername())) {
-            throw new UserAlreadyExistsException("Username '" + registerRequest.getUsername() + "' is already taken!");
+            // ✅ Thay thế UserAlreadyExistsException
+            throw new BusinessException(ErrorCode.USER_EXISTED);
         }
         if (userRepository.existsByEmail(registerRequest.getEmail())) {
-            throw new UserAlreadyExistsException("Email '" + registerRequest.getEmail() + "' is already in use!");
+            // ✅ Thay thế UserAlreadyExistsException
+            throw new BusinessException(ErrorCode.USER_EXISTED);
         }
 
         // 2. Mã hóa mật khẩu
         String encodedPassword = passwordEncoder.encode(registerRequest.getPassword());
 
-        // 3. Gán Role mặc định (chuẩn doanh nghiệp thường gán ROLE_USER)
-        // Giả định: Role là "USER" nếu không được chỉ định
+        // 3. Gán Role mặc định
         String requestedRole = registerRequest.getRoleName() != null ? registerRequest.getRoleName().toUpperCase() : "USER";
 
         // Tìm kiếm Role trong DB
         Role userRole = roleRepository.findByName(requestedRole)
-                .orElseThrow(() -> new RoleNotFoundException("Error: Role '" + requestedRole + "' is not found."));
+                // ✅ Thay thế RoleNotFoundException
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROLE_NOT_FOUND));
 
         // 4. Tạo đối tượng User
         User user = new User();
@@ -188,7 +191,6 @@ public class AuthService {
         user.setEmail(registerRequest.getEmail());
         user.setPassword(encodedPassword);
         user.setRole(userRole);
-        // Thêm các trường khác nếu cần thiết (ví dụ: isEnabled=true)
 
         // 5. Lưu vào Database
         User savedUser = userRepository.save(user);
@@ -201,10 +203,9 @@ public class AuthService {
                 .build();
     }
 
-
-    public void logout(String refreshToken) { // Cần truyền Refresh Token từ Header/Body
+    // --- 5. Logout (Không ném exception nghiệp vụ) ---
+    public void logout(String refreshToken) {
         if (refreshToken == null || refreshToken.isEmpty()) {
-            // Chỉ xóa SecurityContext nếu không có token để thu hồi
             SecurityContextHolder.clearContext();
             return;
         }
@@ -212,20 +213,12 @@ public class AuthService {
         Optional<RefreshToken> tokenEntity = refreshTokenRepository.findByToken(refreshToken);
 
         if (tokenEntity.isPresent()) {
-            // Vô hiệu hóa token trong DB
             RefreshToken rt = tokenEntity.get();
             rt.setRevoked(true);
             refreshTokenRepository.save(rt);
         }
-        // Xóa context (luôn thực hiện)
         SecurityContextHolder.clearContext();
     }
-
-    // Trong AuthService.java
-
-    // Trong AuthService.java
-
-    // Trong AuthService.java
 
     private void saveRefreshToken(User user, String tokenString) {
         long REFRESH_TOKEN_EXPIRATION_MS = 604800000L;
@@ -241,7 +234,7 @@ public class AuthService {
 
             // XÓA TOKEN CŨ KHỎI DATABASE NGAY LẬP TỨC
             refreshTokenRepository.delete(oldToken);
-            refreshTokenRepository.flush(); // ← QUAN TRỌNG: Buộc DELETE thực thi ngay
+            refreshTokenRepository.flush();
         }
 
         // BƯỚC 2: TẠO VÀ LƯU TOKEN MỚI
@@ -249,7 +242,7 @@ public class AuthService {
                 .token(tokenString)
                 .expiryDate(expiryDate)
                 .revoked(false)
-                .user(user) // ← Thiết lập liên kết ngay khi build
+                .user(user)
                 .build();
 
         user.setRefreshToken(newRefreshToken);
@@ -258,6 +251,3 @@ public class AuthService {
         refreshTokenRepository.save(newRefreshToken);
     }
 }
-
-
-

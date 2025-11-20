@@ -3,7 +3,7 @@ package com.example.construction_management.controller;
 
 
 
-import com.example.construction_management.dto.APIResponse;
+import com.example.construction_management.dto.ApiResponse;
 import com.example.construction_management.dto.request.CustomerDTO;
 import com.example.construction_management.service.CustomerService;
 import jakarta.validation.Valid;
@@ -24,45 +24,45 @@ public class CustomerController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'SALE', 'ACCOUNTANT')")
-    public ResponseEntity<APIResponse<List<CustomerDTO>>> getAllCustomers() {
+    public ResponseEntity<ApiResponse<List<CustomerDTO>>> getAllCustomers() {
         List<CustomerDTO> customers = customerService.getAllCustomers();
-        return ResponseEntity.ok(APIResponse.success(customers));
+        return ResponseEntity.ok(ApiResponse.success(customers));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'SALE', 'ACCOUNTANT')")
-    public ResponseEntity<APIResponse<CustomerDTO>> getCustomerById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<CustomerDTO>> getCustomerById(@PathVariable Long id) {
         CustomerDTO customer = customerService.getCustomerById(id);
-        return ResponseEntity.ok(APIResponse.success(customer));
+        return ResponseEntity.ok(ApiResponse.success(customer));
     }
 
     @GetMapping("/debt")
     @PreAuthorize("hasAnyRole('ADMIN', 'SALE', 'ACCOUNTANT')")
-    public ResponseEntity<APIResponse<List<CustomerDTO>>> getCustomersWithDebt() {
+    public ResponseEntity<ApiResponse<List<CustomerDTO>>> getCustomersWithDebt() {
         List<CustomerDTO> customers = customerService.getCustomersWithDebt();
-        return ResponseEntity.ok(APIResponse.success(customers));
+        return ResponseEntity.ok(ApiResponse.success(customers));
     }
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'SALE')")
-    public ResponseEntity<APIResponse<CustomerDTO>> createCustomer(@Valid @RequestBody CustomerDTO customerDTO) {
+    public ResponseEntity<ApiResponse<CustomerDTO>> createCustomer(@Valid @RequestBody CustomerDTO customerDTO) {
         CustomerDTO created = customerService.createCustomer(customerDTO);
-        return ResponseEntity.ok(APIResponse.success(created, "Customer created successfully"));
+        return ResponseEntity.ok(ApiResponse.success(created, "Customer created successfully"));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'SALE')")
-    public ResponseEntity<APIResponse<CustomerDTO>> updateCustomer(
+    public ResponseEntity<ApiResponse<CustomerDTO>> updateCustomer(
             @PathVariable Long id,
             @Valid @RequestBody CustomerDTO customerDTO) {
         CustomerDTO updated = customerService.updateCustomer(id, customerDTO);
-        return ResponseEntity.ok(APIResponse.success(updated, "Customer updated successfully"));
+        return ResponseEntity.ok(ApiResponse.success(updated, "Customer updated successfully"));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<APIResponse<Void>> deleteCustomer(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> deleteCustomer(@PathVariable Long id) {
         customerService.deleteCustomer(id);
-        return ResponseEntity.ok(APIResponse.success(null, "Customer deleted successfully"));
+        return ResponseEntity.ok(ApiResponse.success(null, "Customer deleted successfully"));
     }
 }

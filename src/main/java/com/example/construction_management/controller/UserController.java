@@ -1,6 +1,6 @@
 package com.example.construction_management.controller;
 
-import com.example.construction_management.dto.APIResponse;
+import com.example.construction_management.dto.ApiResponse;
 import com.example.construction_management.dto.response.UserResponse;
 import com.example.construction_management.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -18,11 +18,11 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping("/me")
-    public ResponseEntity<APIResponse<UserResponse>> getCurrentUser( ) {
+    public ResponseEntity<ApiResponse<UserResponse>> getCurrentUser( ) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserResponse user = userService.getCurrentUser(authentication);
         return ResponseEntity.ok(
-                APIResponse.success(user, "Get user info successfully")
+                ApiResponse.success(user, "Get user info successfully")
         );
     }
 
