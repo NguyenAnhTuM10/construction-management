@@ -13,15 +13,15 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create
-    properties:
-      javax:
-        persistence:
-          schema-generation:
-            scripts:
-              action: create
-              create-target: src/main/resources/schema.sql
-            create-source: metadata
+      ddl-auto: update
+#    properties:
+#      javax:
+#        persistence:
+#          schema-generation:
+#            scripts:
+#              action: create
+#              create-target: src/main/resources/schema.sql
+#            create-source: metadata
 
 
 

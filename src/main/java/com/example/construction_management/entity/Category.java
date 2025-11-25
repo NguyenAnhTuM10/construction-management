@@ -5,6 +5,8 @@ package com.example.construction_management.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
+
 @Entity
 @Table(name = "categories")
 @Getter
@@ -19,4 +21,7 @@ public class Category {
 
     @Column(nullable = false, length = 100)
     private String name;
+
+    @OneToMany(mappedBy = "category",  fetch = FetchType.LAZY)
+    private List<Product> Products;
 }

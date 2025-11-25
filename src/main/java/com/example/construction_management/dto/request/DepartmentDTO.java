@@ -11,9 +11,6 @@ import java.time.LocalDate;
 // DepartmentDTO
 @Data
 public class DepartmentDTO {
-    private Integer id;
-
-    @NotBlank(message = "Department name is required")
-    @Size(max = 100)
+    private Long id;
     private String name;
 }

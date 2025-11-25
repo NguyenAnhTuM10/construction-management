@@ -9,7 +9,9 @@ import java.util.List;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
     boolean existsByCode(String code);
-    List<Product> findByCategoryId(Integer categoryId);
+    List<Product> findByCategory_Id(Long categoryId);
     List<Product> findByStockLessThan(Integer threshold);
+
+    Long countByCategory_Id(Long categoryId);
 
 }

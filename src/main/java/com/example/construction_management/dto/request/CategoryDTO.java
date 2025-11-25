@@ -6,7 +6,6 @@ import lombok.Data;
 
 @Data
 public class CategoryDTO {
-    private Integer id;
 
     @NotBlank(message = "Category name is required")
     @Size(max = 100)

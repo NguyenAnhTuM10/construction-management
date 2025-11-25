@@ -2,8 +2,10 @@ package com.example.construction_management.config;
 
 
 
+import com.example.construction_management.entity.Department;
 import com.example.construction_management.entity.Role;
 import com.example.construction_management.entity.User;
+import com.example.construction_management.repository.DepartmentRepository;
 import com.example.construction_management.repository.RoleRepository;
 import com.example.construction_management.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,7 @@ public class DataInitializer implements ApplicationRunner {
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final DepartmentRepository departmentRepository;
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
@@ -49,6 +52,7 @@ public class DataInitializer implements ApplicationRunner {
             User adminUser = User.builder()
                     .username(adminUsername)
                     .password(passwordEncoder.encode("admin123"))
+                    .email("admin@gmail.com")
                     .role(adminRole)
                     .build();
 
@@ -59,5 +63,37 @@ public class DataInitializer implements ApplicationRunner {
         }
 
         System.out.println("🚀 Data initialization completed successfully.");
+
+
+        initDepartments();
+
+
+
+
+
+
+    }
+
+
+
+    private void initDepartments() {
+        List<String> deps = List.of(
+                "MANAGEMENT",
+                "SALES",
+                "ACCOUNTING",
+                "WAREHOUSE",
+                "HUMAN RECOURSES"
+
+        );
+
+        deps.forEach(d -> {
+            if (!departmentRepository.existsByName(d)) {
+                Department dep = new Department();
+                dep.setName(d);
+                departmentRepository.save(dep);
+            }
+        });
+
+
     }
 }
