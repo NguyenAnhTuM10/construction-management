@@ -1,6 +1,6 @@
 package com.example.construction_management.service;
 
-import com.example.construction_management.dto.request.ProductCreateUpdateDTO; // ✅ Đã sửa import DTO
+import com.example.construction_management.dto.request.ProductCreateUpdateDTO;
 import com.example.construction_management.entity.Category;
 import com.example.construction_management.entity.Product;
 import com.example.construction_management.exception.BusinessException;
@@ -11,7 +11,6 @@ import com.example.construction_management.repository.ProductRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,7 +33,7 @@ public class ProductService {
 
     public Product findById(Long id) {
         return productRepository.findById(id)
-                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND, "Chỉ có thể xóa đơn hàng đã bị hủy"));
     }
 
     @Transactional
@@ -42,7 +41,7 @@ public class ProductService {
     public Product create(ProductCreateUpdateDTO dto) {
         // 1. Tìm Category dựa trên ID trong DTO của Product
         Category category = categoryRepository.findById(dto.getCategoryId()) // ✅ Lấy Category ID
-                .orElseThrow(() -> new BusinessException(ErrorCode.CATEGORY_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.CATEGORY_NOT_FOUND, "Chỉ có thể xóa đơn hàng đã bị hủy"));
 
       Product product = productMapper.toProduct(dto);
 
@@ -62,7 +61,7 @@ public class ProductService {
         // 1. Tìm và thiết lập Category (nếu Category ID được cung cấp trong DTO)
         if (dto.getCategoryId() != null) {
             Category category = categoryRepository.findById(dto.getCategoryId())
-                    .orElseThrow(() -> new BusinessException(ErrorCode.CATEGORY_NOT_FOUND));
+                    .orElseThrow(() -> new BusinessException(ErrorCode.CATEGORY_NOT_FOUND, "Chỉ có thể xóa đơn hàng đã bị hủy"));
             existingProduct.setCategory(category);
         }
 

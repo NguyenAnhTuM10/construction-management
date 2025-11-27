@@ -43,20 +43,30 @@ public enum ErrorCode {
     // Product related errors
     PRODUCT_NOT_FOUND(5001, "Product not found", HttpStatus.NOT_FOUND),
     PRODUCT_CODE_EXISTS(5002, "Product code already exists", HttpStatus.BAD_REQUEST),
-    INSUFFICIENT_STOCK(5003, "Insufficient product stock", HttpStatus.BAD_REQUEST),
 
     // Order related errors
     ORDER_NOT_FOUND(6001, "Order not found", HttpStatus.NOT_FOUND),
-    INVALID_ORDER_STATUS(6002, "Invalid order status", HttpStatus.BAD_REQUEST),
+
+    BUSINESS_ERROR(6001, "Lỗi nghiệp vụ", HttpStatus.BAD_REQUEST),
+    INSUFFICIENT_STOCK(6002, "Không đủ hàng trong kho", HttpStatus.BAD_REQUEST),
+    INVALID_PRICE(6003, "Giá không hợp lệ", HttpStatus.BAD_REQUEST),
+    INVALID_ORDER_STATUS(6004, "Trạng thái đơn hàng không hợp lệ", HttpStatus.BAD_REQUEST),
+    ORDER_CANNOT_BE_MODIFIED(6005, "Đơn hàng không thể chỉnh sửa", HttpStatus.BAD_REQUEST),
+
 
     // Customer related errors
     CUSTOMER_NOT_FOUND(7001, "Customer not found", HttpStatus.NOT_FOUND),
 
 
+    RESOURCE_NOT_FOUND(8001, "Không tìm thấy tài nguyên", HttpStatus.NOT_FOUND),
 
-
+    // ========== DUPLICATE ERRORS (3xxx) ==========
+    DUPLICATE_RESOURCE(9001, "Tài nguyên đã tồn tại", HttpStatus.CONFLICT),
+    CUSTOMER_EMAIL_EXISTS(9002, "Email khách hàng đã tồn tại", HttpStatus.CONFLICT),
+    CUSTOMER_PHONE_EXISTS(9003, "Số điện thoại đã tồn tại", HttpStatus.CONFLICT),
+    CATEGORY_NAME_EXISTS(9005, "Tên danh mục đã tồn tại", HttpStatus.CONFLICT),
     // General errors
-    INVALID_INPUT(9001, "Invalid input data", HttpStatus.BAD_REQUEST)
+    INVALID_INPUT(9006, "Invalid input data", HttpStatus.BAD_REQUEST)
     ;
 
     private final int code;

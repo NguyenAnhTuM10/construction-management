@@ -7,7 +7,6 @@ import com.example.construction_management.entity.Role;
 import com.example.construction_management.entity.User;
 // Import các class exception mới
 import com.example.construction_management.exception.BusinessException;
-import com.example.construction_management.exception.BusinessException;
 import com.example.construction_management.exception.ErrorCode;
 
 import com.example.construction_management.mapper.UserMapper;
@@ -30,12 +29,12 @@ public class AdminService {
         // 1. Lấy user
         User user = userRepository.findById(request.getUserId())
                 // ✅ Thay thế RuntimeException bằng BusinessException
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, "Chỉ có thể xóa đơn hàng đã bị hủy"));
 
         // 2. Lấy role
         Role role = roleRepository.findByName(request.getRoleName().toUpperCase())
                 // ✅ Thay thế RuntimeException bằng BusinessException
-                .orElseThrow(() -> new BusinessException(ErrorCode.ROLE_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROLE_NOT_FOUND, "Chỉ có thể xóa đơn hàng đã bị hủy"));
 
         // 3. Update role
         user.setRole(role);

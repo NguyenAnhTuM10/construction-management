@@ -8,7 +8,6 @@ import com.example.construction_management.mapper.CategoryMapper;
 import com.example.construction_management.repository.CategoryRepository;
 import com.example.construction_management.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,7 +28,7 @@ public class CategoryService {
 
     public Category findById(Long id) {
         return categoryRepository.findById(id)
-                .orElseThrow(() -> new BusinessException(ErrorCode.CATEGORY_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.CATEGORY_NOT_FOUND, "Chỉ có thể xóa đơn hàng đã bị hủy"));
     }
 
     public Category create(CategoryDTO dto) {
