@@ -116,6 +116,10 @@ public class EmployeeService {
             employee.setSalary(request.getSalary());
         }
 
+        if (request.getSalary() != null) {
+
+        }
+
         if (request.getHireDate() != null) {
             employee.setHireDate(request.getHireDate());
         }

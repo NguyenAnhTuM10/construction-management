@@ -66,7 +66,8 @@ public enum ErrorCode {
     CUSTOMER_PHONE_EXISTS(9003, "Số điện thoại đã tồn tại", HttpStatus.CONFLICT),
     CATEGORY_NAME_EXISTS(9005, "Tên danh mục đã tồn tại", HttpStatus.CONFLICT),
     // General errors
-    INVALID_INPUT(9006, "Invalid input data", HttpStatus.BAD_REQUEST)
+    INVALID_INPUT(9006, "Invalid input data", HttpStatus.BAD_REQUEST),
+    INVALID_REQUEST(9007, "Invalid request", HttpStatus.BAD_REQUEST),
     ;
 
     private final int code;
