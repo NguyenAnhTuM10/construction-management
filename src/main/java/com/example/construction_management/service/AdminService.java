@@ -29,12 +29,12 @@ public class AdminService {
         // 1. Lấy user
         User user = userRepository.findById(request.getUserId())
                 // ✅ Thay thế RuntimeException bằng BusinessException
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, "Chỉ có thể xóa đơn hàng đã bị hủy"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 2. Lấy role
         Role role = roleRepository.findByName(request.getRoleName().toUpperCase())
                 // ✅ Thay thế RuntimeException bằng BusinessException
-                .orElseThrow(() -> new BusinessException(ErrorCode.ROLE_NOT_FOUND, "Chỉ có thể xóa đơn hàng đã bị hủy"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROLE_NOT_FOUND));
 
         // 3. Update role
         user.setRole(role);

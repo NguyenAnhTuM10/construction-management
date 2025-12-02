@@ -35,6 +35,7 @@ public enum ErrorCode {
 
     // Department related errors
     DEPARTMENT_ALREADY_EXISTS(3002, "Department already exists", HttpStatus.BAD_REQUEST),
+    SUPPLIER_NOT_FOUND(3003, "Supplier Not Found", HttpStatus.NOT_FOUND),
 
     // Category related errors
     CATEGORY_NOT_FOUND(4001, "Category not found", HttpStatus.NOT_FOUND),

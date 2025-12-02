@@ -50,7 +50,7 @@ public class EmployeeService {
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> {
                     log.error("Employee not found with id: {}", employeeId);
-                    return new BusinessException(ErrorCode.USER_NOT_FOUND, "Chỉ có thể xóa đơn hàng đã bị hủy");
+                    return new BusinessException(ErrorCode.USER_NOT_FOUND);
                 });
 
         return employeeMapper.toResponse(employee);
@@ -100,7 +100,7 @@ public class EmployeeService {
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> {
                     log.error("Employee not found with id: {}", employeeId);
-                    return new BusinessException(ErrorCode.USER_NOT_FOUND, "Chỉ có thể xóa đơn hàng đã bị hủy");
+                    return new BusinessException(ErrorCode.USER_NOT_FOUND);
                 });
 
         // Cập nhật các trường cơ bản
@@ -165,7 +165,7 @@ public class EmployeeService {
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> {
                     log.error("Employee not found with id: {}", employeeId);
-                    return new BusinessException(ErrorCode.USER_NOT_FOUND, "Chỉ có thể xóa đơn hàng đã bị hủy");
+                    return new BusinessException(ErrorCode.USER_NOT_FOUND);
                 });
 
         // Kiểm tra và xử lý quan hệ với User
@@ -192,13 +192,13 @@ public class EmployeeService {
     private Department findDepartmentByName(String departmentName) {
         if (departmentName == null || departmentName.trim().isEmpty()) {
             log.error("Department name is null or empty");
-            throw new BusinessException(ErrorCode.INVALID_INPUT, "Chỉ có thể xóa đơn hàng đã bị hủy");
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
 
         Department department = departmentRepository.findByName(departmentName.trim())
                 .orElseThrow(() -> {
                     log.error("Department not found with name: {}", departmentName);
-                    return new BusinessException(ErrorCode.DEPARTMENT_NOT_FOUND, "Chỉ có thể xóa đơn hàng đã bị hủy");
+                    return new BusinessException(ErrorCode.DEPARTMENT_NOT_FOUND);
                 });
 
         return department;

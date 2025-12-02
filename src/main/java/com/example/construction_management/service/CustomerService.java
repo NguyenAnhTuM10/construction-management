@@ -66,17 +66,13 @@ public class CustomerService {
         // Validate email unique
         if (request.getEmail() != null && customerRepository.existsByEmail(request.getEmail())) {
             throw new BusinessException(
-                    ErrorCode.CUSTOMER_EMAIL_EXISTS,
-
-                    "Chỉ có thể xóa đơn hàng đã bị hủy");
+                    ErrorCode.CUSTOMER_EMAIL_EXISTS);
         }
 
         // Validate phone unique
         if (request.getPhone() != null && customerRepository.existsByPhone(request.getPhone())) {
             throw new BusinessException(
-                    ErrorCode.CUSTOMER_PHONE_EXISTS,
-
-                    "Chỉ có thể xóa đơn hàng đã bị hủy");
+                    ErrorCode.CUSTOMER_PHONE_EXISTS);
         }
 
         // Map DTO to Entity và save
@@ -102,9 +98,7 @@ public class CustomerService {
                     .ifPresent(existing -> {
                         if (!existing.getId().equals(id)) {
                             throw new BusinessException(
-                                    ErrorCode.CUSTOMER_EMAIL_EXISTS,
-
-                                    "Chỉ có thể xóa đơn hàng đã bị hủy");
+                                    ErrorCode.CUSTOMER_EMAIL_EXISTS);
                         }
                     });
         }
@@ -115,9 +109,7 @@ public class CustomerService {
                     .ifPresent(existing -> {
                         if (!existing.getId().equals(id)) {
                             throw new BusinessException(
-                                    ErrorCode.CUSTOMER_PHONE_EXISTS,
-
-                                    "Chỉ có thể xóa đơn hàng đã bị hủy");
+                                    ErrorCode.CUSTOMER_PHONE_EXISTS);
                         }
                     });
         }
@@ -138,7 +130,7 @@ public class CustomerService {
 
         // Check tồn tại
         if (!customerRepository.existsById(id)) {
-            throw new BusinessException(ErrorCode.CUSTOMER_NOT_FOUND, "Chỉ có thể xóa đơn hàng đã bị hủy");
+            throw new BusinessException(ErrorCode.CUSTOMER_NOT_FOUND);
         }
 
         customerRepository.deleteById(id);
@@ -151,8 +143,6 @@ public class CustomerService {
     private Customer findCustomerById(Long id) {
         return customerRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(
-                        ErrorCode.CUSTOMER_NOT_FOUND,
-
-                        "Chỉ có thể xóa đơn hàng đã bị hủy"));
+                        ErrorCode.CUSTOMER_NOT_FOUND));
     }
 }

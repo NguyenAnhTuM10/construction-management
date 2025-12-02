@@ -28,7 +28,7 @@ public class CategoryService {
 
     public Category findById(Long id) {
         return categoryRepository.findById(id)
-                .orElseThrow(() -> new BusinessException(ErrorCode.CATEGORY_NOT_FOUND, "Chỉ có thể xóa đơn hàng đã bị hủy"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.CATEGORY_NOT_FOUND));
     }
 
     public Category create(CategoryDTO dto) {

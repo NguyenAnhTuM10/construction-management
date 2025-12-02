@@ -70,7 +70,7 @@ public class AuthService {
         // 2. Lấy thông tin người dùng. Nếu Auth thành công mà User không tồn tại (rất hiếm)
         User user = userRepository.findByUsername(loginRequest.getUsername())
                 // ✅ Thay thế RuntimeException bằng BusinessException
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, "Chỉ có thể xóa đơn hàng đã bị hủy"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 3. Lưu Refresh Token
         saveRefreshToken(user, refreshToken);
@@ -95,17 +95,17 @@ public class AuthService {
         // 1. Validate token cú pháp & loại token
         if (!tokenProvider.validateToken(oldRefreshTokenString) || !tokenProvider.isRefreshToken(oldRefreshTokenString)) {
             // ✅ Thay thế InvalidTokenException
-            throw new BusinessException(ErrorCode.USER_UNAUTHENTICATED, "Chỉ có thể xóa đơn hàng đã bị hủy");
+            throw new BusinessException(ErrorCode.USER_UNAUTHENTICATED);
         }
 
         // 2. TÌM TOKEN TRONG DB VÀ KIỂM TRA REVOKED/EXPIRY
         RefreshToken oldRefreshTokenEntity = refreshTokenRepository.findByToken(oldRefreshTokenString)
                 // ✅ Thay thế InvalidTokenException
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_UNAUTHENTICATED, "Chỉ có thể xóa đơn hàng đã bị hủy"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_UNAUTHENTICATED));
 
         if (oldRefreshTokenEntity.isRevoked() || oldRefreshTokenEntity.getExpiryDate().isBefore(Instant.now())) {
             // ✅ Thay thế InvalidTokenException
-            throw new BusinessException(ErrorCode.USER_UNAUTHENTICATED, "Chỉ có thể xóa đơn hàng đã bị hủy");
+            throw new BusinessException(ErrorCode.USER_UNAUTHENTICATED);
         }
 
         // 3. Get username và Tải UserDetails
@@ -146,14 +146,14 @@ public class AuthService {
         if (authentication == null || !authentication.isAuthenticated()
                 || authentication.getPrincipal().equals("anonymousUser")) {
             // ✅ Thay thế UserNotAuthenticatedException
-            throw new BusinessException(ErrorCode.USER_UNAUTHENTICATED, "Chỉ có thể xóa đơn hàng đã bị hủy");
+            throw new BusinessException(ErrorCode.USER_UNAUTHENTICATED);
         }
 
         String username = authentication.getName();
 
         return userRepository.findByUsername(username)
                 // ✅ Thay thế UserNotFoundException
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, "Chỉ có thể xóa đơn hàng đã bị hủy"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
     }
 
     public UserResponse getCurrentUserInfo(Authentication authentication) {
@@ -167,11 +167,11 @@ public class AuthService {
         // 1. Kiểm tra username/email đã tồn tại chưa
         if (userRepository.existsByUsername(registerRequest.getUsername())) {
             // ✅ Thay thế UserAlreadyExistsException
-            throw new BusinessException(ErrorCode.USER_EXISTED, "Chỉ có thể xóa đơn hàng đã bị hủy");
+            throw new BusinessException(ErrorCode.USER_EXISTED);
         }
         if (userRepository.existsByEmail(registerRequest.getEmail())) {
             // ✅ Thay thế UserAlreadyExistsException
-            throw new BusinessException(ErrorCode.USER_EXISTED, "Chỉ có thể xóa đơn hàng đã bị hủy");
+            throw new BusinessException(ErrorCode.USER_EXISTED);
         }
 
         // 2. Mã hóa mật khẩu
@@ -183,7 +183,7 @@ public class AuthService {
         // Tìm kiếm Role trong DB
         Role userRole = roleRepository.findByName(requestedRole)
                 // ✅ Thay thế RoleNotFoundException
-                .orElseThrow(() -> new BusinessException(ErrorCode.ROLE_NOT_FOUND, "Chỉ có thể xóa đơn hàng đã bị hủy"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROLE_NOT_FOUND));
 
         // 4. Tạo đối tượng User
         User user = new User();

@@ -108,13 +108,13 @@ public class OrderService {
 
         // Validate customer
         Customer customer = customerRepository.findById(request.getCustomerId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.CUSTOMER_NOT_FOUND, "Chỉ có thể xóa đơn hàng đã bị hủy"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.CUSTOMER_NOT_FOUND));
 
         // Validate employee
         Employee employee = employeeRepository.findById(request.getEmployeeId())
                 .orElseThrow(() -> new BusinessException(
-                        ErrorCode.RESOURCE_NOT_FOUND,
-                        "Không tìm thấy nhân viên với ID: " + request.getEmployeeId()
+                        ErrorCode.EMPLOYEE_NOT_FOUND
+
                 ));
 
         // Tạo Order
@@ -130,13 +130,13 @@ public class OrderService {
         BigDecimal total = BigDecimal.ZERO;
         for (OrderItemRequest itemRequest : request.getItems()) {
             Product product = productRepository.findById(itemRequest.getProductId())
-                    .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND, "Chỉ có thể xóa đơn hàng đã bị hủy"));
+                    .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
 
             // Kiểm tra tồn kho
             if (product.getStock() < itemRequest.getQuantity()) {
                 throw new BusinessException(
-                        ErrorCode.INSUFFICIENT_STOCK,
-                        "Sản phẩm '" + product.getName() + "' không đủ hàng. Tồn kho: " + product.getStock()
+                        ErrorCode.INSUFFICIENT_STOCK
+
                 );
             }
 
@@ -178,15 +178,15 @@ public class OrderService {
         // Chỉ cho phép cập nhật khi status = PENDING
         if (order.getStatus() != OrderStatus.PENDING) {
             throw new BusinessException(
-                    ErrorCode.BUSINESS_ERROR,
-                    "Chỉ có thể cập nhật đơn hàng ở trạng thái PENDING"
+                    ErrorCode.BUSINESS_ERROR
+
             );
         }
 
         // Update customer nếu có
         if (request.getCustomerId() != null) {
             Customer customer = customerRepository.findById(request.getCustomerId())
-                    .orElseThrow(() -> new BusinessException(ErrorCode.CUSTOMER_NOT_FOUND, "Chỉ có thể xóa đơn hàng đã bị hủy"));
+                    .orElseThrow(() -> new BusinessException(ErrorCode.CUSTOMER_NOT_FOUND));
             order.setCustomer(customer);
         }
 
@@ -194,8 +194,8 @@ public class OrderService {
         if (request.getEmployeeId() != null) {
             Employee employee = employeeRepository.findById(request.getEmployeeId())
                     .orElseThrow(() -> new BusinessException(
-                            ErrorCode.RESOURCE_NOT_FOUND,
-                            "Không tìm thấy nhân viên"
+                            ErrorCode.RESOURCE_NOT_FOUND
+
                     ));
             order.setEmployee(employee);
         }
@@ -216,12 +216,12 @@ public class OrderService {
             BigDecimal total = BigDecimal.ZERO;
             for (OrderItemRequest itemRequest : request.getItems()) {
                 Product product = productRepository.findById(itemRequest.getProductId())
-                        .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND, "Chỉ có thể xóa đơn hàng đã bị hủy"));
+                        .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
 
                 if (product.getStock() < itemRequest.getQuantity()) {
                     throw new BusinessException(
-                            ErrorCode.INSUFFICIENT_STOCK,
-                            "Sản phẩm '" + product.getName() + "' không đủ hàng"
+                            ErrorCode.INSUFFICIENT_STOCK
+
                     );
                 }
 
@@ -281,8 +281,8 @@ public class OrderService {
         if (order.getStatus() != OrderStatus.PENDING &&
                 order.getStatus() != OrderStatus.CONFIRMED) {
             throw new BusinessException(
-                    ErrorCode.BUSINESS_ERROR,
-                    "Chỉ có thể hủy đơn hàng ở trạng thái PENDING hoặc CONFIRMED"
+                    ErrorCode.BUSINESS_ERROR
+
             );
         }
 
@@ -310,8 +310,8 @@ public class OrderService {
 
         if (order.getStatus() != OrderStatus.CANCELLED) {
             throw new BusinessException(
-                    ErrorCode.BUSINESS_ERROR,
-                    "Chỉ có thể xóa đơn hàng đã bị hủy"
+                    ErrorCode.BUSINESS_ERROR
+
             );
         }
 
@@ -325,8 +325,8 @@ public class OrderService {
     private Order findOrderById(Long id) {
         return orderRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(
-                        ErrorCode.RESOURCE_NOT_FOUND,
-                        "Không tìm thấy đơn hàng với ID: " + id
+                        ErrorCode.RESOURCE_NOT_FOUND
+
                 ));
     }
 
@@ -337,8 +337,8 @@ public class OrderService {
         // Không cho phép chuyển từ CANCELLED hoặc COMPLETED
         if (current == OrderStatus.CANCELLED || current == OrderStatus.COMPLETED) {
             throw new BusinessException(
-                    ErrorCode.BUSINESS_ERROR,
-                    "Không thể thay đổi trạng thái đơn hàng đã " + current.getDescription()
+                    ErrorCode.BUSINESS_ERROR
+
             );
         }
 
@@ -353,9 +353,8 @@ public class OrderService {
 
         if (!isValid) {
             throw new BusinessException(
-                    ErrorCode.BUSINESS_ERROR,
-                    "Không thể chuyển từ trạng thái " + current.getDescription() +
-                            " sang " + newStatus.getDescription()
+                    ErrorCode.BUSINESS_ERROR
+
             );
         }
     }
