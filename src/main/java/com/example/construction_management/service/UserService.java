@@ -25,7 +25,7 @@ public class UserService {
     // ✅ 1. Lấy thông tin cá nhân (Current User - By ID)
     public UserResponse getPersonalData(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, "Chỉ có thể xóa đơn hàng đã bị hủy"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         return userMapper.toUserResponse(user);
     }
@@ -33,7 +33,7 @@ public class UserService {
     // 💡 PHƯƠNG THỨC MỚI: Lấy thông tin cá nhân bằng Username (dễ dàng dùng từ Authentication object)
     public UserResponse getPersonalDataByUsername(String username) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, "Chỉ có thể xóa đơn hàng đã bị hủy"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         return userMapper.toUserResponse(user);
     }
@@ -42,11 +42,11 @@ public class UserService {
     @Transactional
     public UserResponse updatePersonalData(String username, UpdatePersonalDataRequest request) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, "Chỉ có thể xóa đơn hàng đã bị hủy"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // Kiểm tra Conflict (ví dụ: email đã tồn tại)
         if (request.getEmail() != null && !request.getEmail().equalsIgnoreCase(user.getEmail()) && userRepository.existsByEmail(request.getEmail())) {
-            throw new BusinessException(ErrorCode.USER_EXISTED, "Chỉ có thể xóa đơn hàng đã bị hủy");
+            throw new BusinessException(ErrorCode.USER_EXISTED);
         }
 
         // Cập nhật các trường
@@ -69,16 +69,16 @@ public class UserService {
     @Transactional
     public void changePassword(String username, ChangePasswordRequest request) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, "Chỉ có thể xóa đơn hàng đã bị hủy"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 1. Kiểm tra mật khẩu cũ
         if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
-            throw new BusinessException(ErrorCode.WRONG_PASSWORD, "Chỉ có thể xóa đơn hàng đã bị hủy");
+            throw new BusinessException(ErrorCode.WRONG_PASSWORD);
         }
 
         // 2. Kiểm tra mật khẩu mới
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
-            throw new BusinessException(ErrorCode.NOT_MATHES_PASSWORD, "Chỉ có thể xóa đơn hàng đã bị hủy");
+            throw new BusinessException(ErrorCode.NOT_MATHES_PASSWORD);
         }
 
         // Cần thêm validation cho độ dài mật khẩu mới (Nếu chưa có trong DTO)

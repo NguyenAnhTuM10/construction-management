@@ -64,7 +64,7 @@ public class SalaryService {
 
         // Validate employee exists
         if (!employeeRepository.existsById(employeeId)) {
-            throw new BusinessException(ErrorCode.EMPLOYEE_NOT_FOUND ,"NOT FOUND USER");
+            throw new BusinessException(ErrorCode.EMPLOYEE_NOT_FOUND );
         }
 
         List<Salary> salaries = salaryRepository.findByEmployeeId(employeeId);
@@ -103,7 +103,7 @@ public class SalaryService {
 
         // Validate employee
         Employee employee = employeeRepository.findById(request.getEmployeeId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.EMPLOYEE_NOT_FOUND, "EMPLOYEE NOT FOUND"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.EMPLOYEE_NOT_FOUND));
 
         // Validate year/month
         validateYearMonth(request.getYear(), request.getMonth());
@@ -112,9 +112,7 @@ public class SalaryService {
         if (salaryRepository.existsByEmployeeIdAndYearAndMonth(
                 request.getEmployeeId(), request.getYear(), request.getMonth())) {
             throw new BusinessException(
-                    ErrorCode.DUPLICATE_RESOURCE,
-                    "Bảng lương cho nhân viên này trong tháng " +
-                            request.getMonth() + "/" + request.getYear() + " đã tồn tại"
+                    ErrorCode.DUPLICATE_RESOURCE
             );
         }
 
@@ -151,8 +149,7 @@ public class SalaryService {
         // Chỉ cho phép cập nhật khi chưa thanh toán
         if (salary.getIsPaid()) {
             throw new BusinessException(
-                    ErrorCode.BUSINESS_ERROR,
-                    "Không thể cập nhật bảng lương đã thanh toán"
+                    ErrorCode.BUSINESS_ERROR
             );
         }
 
@@ -188,8 +185,8 @@ public class SalaryService {
 
         if (salary.getIsPaid()) {
             throw new BusinessException(
-                    ErrorCode.BUSINESS_ERROR,
-                    "Bảng lương này đã được thanh toán rồi"
+                    ErrorCode.BUSINESS_ERROR
+
             );
         }
 
@@ -212,8 +209,7 @@ public class SalaryService {
 
         if (!salary.getIsPaid()) {
             throw new BusinessException(
-                    ErrorCode.BUSINESS_ERROR,
-                    "Bảng lương này chưa được thanh toán"
+                    ErrorCode.BUSINESS_ERROR
             );
         }
 
@@ -236,8 +232,7 @@ public class SalaryService {
 
         if (salary.getIsPaid()) {
             throw new BusinessException(
-                    ErrorCode.BUSINESS_ERROR,
-                    "Không thể xóa bảng lương đã thanh toán"
+                    ErrorCode.BUSINESS_ERROR
             );
         }
 
@@ -291,8 +286,7 @@ public class SalaryService {
     private Salary findSalaryById(Long id) {
         return salaryRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(
-                        ErrorCode.RESOURCE_NOT_FOUND,
-                        "Không tìm thấy bảng lương với ID: " + id
+                        ErrorCode.RESOURCE_NOT_FOUND
                 ));
     }
 
@@ -302,14 +296,12 @@ public class SalaryService {
     private void validateYearMonth(Integer year, Integer month) {
         if (year < 2000 || year > 2100) {
             throw new BusinessException(
-                    ErrorCode.INVALID_REQUEST,
-                    "Năm không hợp lệ"
+                    ErrorCode.INVALID_REQUEST
             );
         }
         if (month < 1 || month > 12) {
             throw new BusinessException(
-                    ErrorCode.INVALID_REQUEST,
-                    "Tháng phải từ 1-12"
+                    ErrorCode.INVALID_REQUEST
             );
         }
     }

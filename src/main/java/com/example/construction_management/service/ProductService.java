@@ -33,7 +33,7 @@ public class ProductService {
 
     public Product findById(Long id) {
         return productRepository.findById(id)
-                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND, "Chỉ có thể xóa đơn hàng đã bị hủy"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
     }
 
     @Transactional
@@ -41,7 +41,7 @@ public class ProductService {
     public Product create(ProductCreateUpdateDTO dto) {
         // 1. Tìm Category dựa trên ID trong DTO của Product
         Category category = categoryRepository.findById(dto.getCategoryId()) // ✅ Lấy Category ID
-                .orElseThrow(() -> new BusinessException(ErrorCode.CATEGORY_NOT_FOUND, "Chỉ có thể xóa đơn hàng đã bị hủy"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.CATEGORY_NOT_FOUND));
 
       Product product = productMapper.toProduct(dto);
 
@@ -61,7 +61,7 @@ public class ProductService {
         // 1. Tìm và thiết lập Category (nếu Category ID được cung cấp trong DTO)
         if (dto.getCategoryId() != null) {
             Category category = categoryRepository.findById(dto.getCategoryId())
-                    .orElseThrow(() -> new BusinessException(ErrorCode.CATEGORY_NOT_FOUND, "Chỉ có thể xóa đơn hàng đã bị hủy"));
+                    .orElseThrow(() -> new BusinessException(ErrorCode.CATEGORY_NOT_FOUND));
             existingProduct.setCategory(category);
         }
 
