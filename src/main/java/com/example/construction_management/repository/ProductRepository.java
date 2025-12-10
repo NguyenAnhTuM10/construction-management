@@ -14,4 +14,5 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     Long countByCategory_Id(Long categoryId);
 
+
 }

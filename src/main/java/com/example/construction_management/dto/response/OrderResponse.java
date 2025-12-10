@@ -23,4 +23,10 @@ public class OrderResponse {
     private String statusDescription;
     private LocalDateTime createdDate;
     private List<OrderItemResponse> items;
+
+
+    private BigDecimal paidAmount;
+    private BigDecimal remainingDebt;
+    private String paymentStatus;
+    private Integer paymentCount;
 }

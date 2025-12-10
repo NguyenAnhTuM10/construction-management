@@ -58,5 +58,11 @@ public interface SalaryRepository extends JpaRepository<Salary, Long> {
     /**
      * Đếm số bảng lương chưa thanh toán
      */
+
+
+
     long countByIsPaid(Boolean isPaid);
+
+    @Query("SELECT SUM(s.totalSalary) FROM Salary s WHERE s.isPaid = :isPaid")
+    BigDecimal sumTotalSalaryByIsPaid(@Param("isPaid") Boolean isPaid);
 }

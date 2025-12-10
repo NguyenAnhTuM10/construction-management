@@ -34,6 +34,9 @@ public enum ErrorCode {
     WAREHOUSE_NOT_EXISTED(1011, "kho không tồn tại", HttpStatus.NOT_FOUND ),
     BALANCE_NOT_EXISTED(1012, "tồn kho khôn tồn tại", HttpStatus.NOT_FOUND ),
     TRANSACTION_NOT_FOUND(1013, "giao dịch không tồn tại", HttpStatus.NOT_FOUND),
+    TASK_NOT_EXITS(1014, "Task không tồn tại", HttpStatus.NOT_FOUND),
+    PAYMENT_NOT_EXITS(1014, "payment không tồn tại", HttpStatus.NOT_FOUND),
+
 
     // -------------------------------------------------------------------------
     // 2xxx: Lỗi Đã Tồn Tại / Trùng Lặp (EXISTS/DUPLICATE/CONFLICT)

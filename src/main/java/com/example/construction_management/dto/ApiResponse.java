@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiResponse<T> {
 
-    // ✅ Giữ nguyên các trường ban đầu
+
     private boolean success;
     private int code = 1000;
     private String message;
