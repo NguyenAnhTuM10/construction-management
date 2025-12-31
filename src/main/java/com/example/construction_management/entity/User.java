@@ -37,5 +37,8 @@ public class User {
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private RefreshToken refreshToken;
 
+    @Column(name = "locked")
+    private Boolean locked = false;
+
 
 }

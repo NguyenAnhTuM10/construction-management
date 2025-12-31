@@ -6,6 +6,8 @@ import com.example.construction_management.entity.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+import java.util.List;
+
 @Mapper(componentModel = "spring")
 public interface UserMapper {
 
@@ -14,6 +16,8 @@ public interface UserMapper {
     @Mapping(source = "employee.name", target = "employeeName")
     @Mapping(source = "employee.department.name", target = "departmentName")
     UserResponse toUserResponse(User user);
+
+    List<UserResponse> toUserResponseList(List<User> user);
 
 
 

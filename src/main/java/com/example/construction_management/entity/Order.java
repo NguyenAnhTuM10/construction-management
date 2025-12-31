@@ -6,6 +6,9 @@ import com.example.construction_management.enums.OrderStatus;
 import com.example.construction_management.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -18,6 +21,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EntityListeners(AuditingEntityListener.class) // ✅ THÊM
 public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,16 +42,15 @@ public class Order {
     @Column(length = 20)
     private OrderStatus status = OrderStatus.PENDING;
 
-    private LocalDateTime createdDate = LocalDateTime.now();
+    @CreatedDate
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdDate;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<OrderItem> items;
+    @Builder.Default
+    private List<OrderItem> items = new ArrayList<>();
 
-
-
-
-
-    // ========== PAYMENT FIELDS (NEW) ==========
+    // ========== PAYMENT FIELDS ==========
 
     @Column(precision = 15, scale = 2)
     @Builder.Default
@@ -65,15 +68,20 @@ public class Order {
     @Builder.Default
     private List<Payment> payments = new ArrayList<>();
 
-    // Helper methods
+    // ========== HELPER METHODS ==========
+
     @PrePersist
     public void prePersist() {
-        if (remainingDebt == null || remainingDebt.compareTo(BigDecimal.ZERO) == 0) {
+        if (this.remainingDebt == null) { // ✅ SỬA: bỏ điều kiện == 0
             this.remainingDebt = this.total;
         }
     }
 
     public void updatePaymentStatus() {
+        // Calculate remaining debt first
+        this.remainingDebt = this.total.subtract(this.paidAmount); // ✅ THÊM
+
+        // Update status
         if (paidAmount.compareTo(BigDecimal.ZERO) == 0) {
             this.paymentStatus = PaymentStatus.UNPAID;
         } else if (paidAmount.compareTo(total) >= 0) {
@@ -84,7 +92,8 @@ public class Order {
         }
     }
 
-
-
-    
+    public void addPayment(Payment payment) { // ✅ THÊM
+        payments.add(payment);
+        payment.setOrder(this);
+    }
 }

@@ -13,6 +13,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -29,6 +31,8 @@ public class UserService {
 
         return userMapper.toUserResponse(user);
     }
+
+
 
     // 💡 PHƯƠNG THỨC MỚI: Lấy thông tin cá nhân bằng Username (dễ dàng dùng từ Authentication object)
     public UserResponse getPersonalDataByUsername(String username) {

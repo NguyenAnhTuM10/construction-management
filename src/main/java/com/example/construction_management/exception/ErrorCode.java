@@ -57,6 +57,7 @@ public enum ErrorCode {
     USER_UNAUTHORIZE(3002, "Người dùng không có quyền truy cập", HttpStatus.FORBIDDEN),
     WRONG_PASSWORD(3003, "Mật khẩu không đúng", HttpStatus.UNAUTHORIZED),
     NOT_MATHES_PASSWORD(3004, "Mật khẩu mới và mật khẩu xác nhận không khớp", HttpStatus.UNAUTHORIZED),
+    INVALID_CREDENTIALS(3005, "Sai tên đăng nhập hoặc mật khẩu",HttpStatus.UNAUTHORIZED),
 
     // -------------------------------------------------------------------------
     // 4xxx: Lỗi Yêu Cầu Dữ Liệu Không Hợp Lệ (Validation/Bad Request)
@@ -72,6 +73,9 @@ public enum ErrorCode {
     INSUFFICIENT_STOCK(5003, "Không đủ hàng trong kho", HttpStatus.BAD_REQUEST),
     INVALID_ORDER_STATUS(5004, "Trạng thái đơn hàng không hợp lệ", HttpStatus.BAD_REQUEST),
     ORDER_CANNOT_BE_MODIFIED(5005, "Đơn hàng không thể chỉnh sửa", HttpStatus.BAD_REQUEST),
+
+    CANNOT_DELETE_ADMIN(4001, "Cannot delete admin user", HttpStatus.BAD_REQUEST),
+    CANNOT_LOCK_ADMIN(4002, "Cannot lock admin user", HttpStatus.BAD_REQUEST),
 
     ; // End of Enum constants
 

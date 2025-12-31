@@ -51,6 +51,8 @@ public class AuthService {
 
     public LoginResponse login(LoginRequest loginRequest) {
 
+
+
         // 1. Thực hiện xác thực.
         // LƯU Ý: Nếu xác thực thất bại (sai pass/user), Spring Security sẽ ném BadCredentialsException,
         // GlobalExceptionHandler sẽ bắt lỗi này và ánh xạ sang ErrorCode.PASSWORD_INVALID.
