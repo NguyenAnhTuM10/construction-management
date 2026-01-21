@@ -118,6 +118,8 @@ public class InventoryTransactionService {
                     .note(itemRequest.getNote())
                     .build();
 
+            item.calculateSubtotal(); 
+
             transaction.addItem(item);
         }
 

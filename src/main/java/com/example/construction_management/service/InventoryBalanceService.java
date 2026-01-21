@@ -21,7 +21,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class InventoryBalanceService {
-    private final InventoryBalanceRepository  balanceRepository;
+    private final InventoryBalanceRepository balanceRepository;
     private final ProductRepository productRepository;
     private final InventoryBalanceMapper balanceMapper;
     private final WarehouseRepository warehouseRepository;
@@ -70,14 +70,12 @@ public class InventoryBalanceService {
                     return balanceRepository.save(newBalance);
                 });
 
-        // Calculate new quantity
         int newQuantity = balance.getQuantity() + quantityChange;
 
         if (newQuantity < 0) {
             throw new IllegalStateException("Số lượng tồn kho không đủ");
         }
 
-        // Calculate new average cost (only for IN transactions)
         if (quantityChange > 0) {
             BigDecimal oldValue = balance.getAverageCost().multiply(BigDecimal.valueOf(balance.getQuantity()));
             BigDecimal newValue = unitPrice.multiply(BigDecimal.valueOf(quantityChange));
@@ -90,6 +88,14 @@ public class InventoryBalanceService {
 
         balance.setQuantity(newQuantity);
         balanceRepository.save(balance);
+
+        // ✅ Cập nhật tồn kho tổng trong Product
+        int newTotalStock = product.getStock() + quantityChange;
+        if (newTotalStock < 0) {
+            throw new IllegalStateException("Tồn kho sản phẩm không đủ");
+        }
+        product.setStock(newTotalStock);
+        productRepository.save(product);
     }
 }
 
