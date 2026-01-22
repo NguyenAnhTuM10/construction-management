@@ -37,4 +37,29 @@ public interface InventoryBalanceRepository extends JpaRepository<InventoryBalan
             "GROUP BY ib.warehouse.id, ib.warehouse.code, ib.warehouse.name " +
             "ORDER BY ib.warehouse.name")
     List<Object[]> getInventoryByWarehouse();
+
+
+
+
+    /**
+     * Tính tổng số lượng tồn kho của một sản phẩm trên tất cả các kho
+     */
+    @Query("SELECT COALESCE(SUM(ib.quantity), 0) FROM InventoryBalance ib WHERE ib.product.id = :productId")
+    Integer sumQuantityByProductId(@Param("productId") Long productId);
+
+    /**
+     * Lấy danh sách tồn kho theo danh sách product IDs
+     */
+    @Query("SELECT ib FROM InventoryBalance ib WHERE ib.product.id IN :productIds")
+    List<InventoryBalance> findByProductIdIn(@Param("productIds") List<Long> productIds);
+
+    /**
+     * Xóa tất cả balance của một product
+     */
+    void deleteByProductId(Long productId);
+
+    /**
+     * Xóa tất cả balance của một warehouse
+     */
+    void deleteByWarehouseId(Long warehouseId);
 }

@@ -13,6 +13,7 @@ import com.example.construction_management.exception.ErrorCode;
 import com.example.construction_management.mapper.InventoryTransactionMapper;
 import com.example.construction_management.repository.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class InventoryTransactionService {
     private final InventoryTransactionRepository transactionRepository;
     private final WarehouseRepository warehouseRepository;
@@ -103,7 +105,7 @@ public class InventoryTransactionService {
         // Set created by
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() ->new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_EXISTED));
         transaction.setCreatedBy(user);
 
         // Add items
@@ -118,8 +120,7 @@ public class InventoryTransactionService {
                     .note(itemRequest.getNote())
                     .build();
 
-            item.calculateSubtotal(); 
-
+            item.calculateSubtotal();
             transaction.addItem(item);
         }
 
@@ -129,6 +130,11 @@ public class InventoryTransactionService {
         // Save
         InventoryTransaction savedTransaction = transactionRepository.save(transaction);
 
+        log.info("Tạo giao dịch mới: Code={}, Type={}, Warehouse={}",
+                savedTransaction.getTransactionCode(),
+                savedTransaction.getType(),
+                warehouse.getName());
+
         return transactionMapper.toResponse(savedTransaction);
     }
 
@@ -137,11 +143,28 @@ public class InventoryTransactionService {
         InventoryTransaction transaction = transactionRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.TRANSACTION_NOT_FOUND));
 
-        if (transaction.getStatus() != TransactionStatus.PENDING) {
-            throw new IllegalStateException("Chỉ có thể hoàn thành giao dịch đang chờ xử lý");
+        // Validate transaction status
+        if (transaction.getStatus() == TransactionStatus.COMPLETED) {
+            throw new BusinessException(ErrorCode.TRANSACTION_ALREADY_COMPLETED);
         }
 
-        // Update inventory balance
+        if (transaction.getStatus() == TransactionStatus.CANCELLED) {
+            throw new BusinessException(ErrorCode.CANNOT_COMPLETE_CANCELLED_TRANSACTION);
+        }
+
+        // Validate stock before processing OUT transaction
+        if (transaction.getType() == TransactionType.OUT) {
+            for (InventoryTransactionItem item : transaction.getItems()) {
+                Integer currentStock = inventoryBalanceService.getTotalStockByProduct(item.getProduct().getId());
+                if (currentStock < item.getQuantity()) {
+                    log.warn("Không đủ tồn kho cho sản phẩm {}: Cần={}, Hiện có={}",
+                            item.getProduct().getCode(), item.getQuantity(), currentStock);
+                    throw new BusinessException(ErrorCode.INSUFFICIENT_STOCK);
+                }
+            }
+        }
+
+        // Update inventory balance for each item
         for (InventoryTransactionItem item : transaction.getItems()) {
             int quantityChange = transaction.getType() == TransactionType.IN
                     ? item.getQuantity()
@@ -156,7 +179,12 @@ public class InventoryTransactionService {
         }
 
         transaction.setStatus(TransactionStatus.COMPLETED);
-        return transactionMapper.toResponse(transactionRepository.save(transaction));
+        InventoryTransaction savedTransaction = transactionRepository.save(transaction);
+
+        log.info("Hoàn thành giao dịch: Code={}, Type={}",
+                transaction.getTransactionCode(), transaction.getType());
+
+        return transactionMapper.toResponse(savedTransaction);
     }
 
     @Transactional
@@ -165,11 +193,19 @@ public class InventoryTransactionService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.TRANSACTION_NOT_FOUND));
 
         if (transaction.getStatus() == TransactionStatus.COMPLETED) {
-            throw new IllegalStateException("Không thể hủy giao dịch đã hoàn thành");
+            throw new BusinessException(ErrorCode.CANNOT_CANCEL_COMPLETED_TRANSACTION);
+        }
+
+        if (transaction.getStatus() == TransactionStatus.CANCELLED) {
+            throw new BusinessException(ErrorCode.TRANSACTION_ALREADY_CANCELLED);
         }
 
         transaction.setStatus(TransactionStatus.CANCELLED);
-        return transactionMapper.toResponse(transactionRepository.save(transaction));
+        InventoryTransaction savedTransaction = transactionRepository.save(transaction);
+
+        log.info("Hủy giao dịch: Code={}", transaction.getTransactionCode());
+
+        return transactionMapper.toResponse(savedTransaction);
     }
 
     @Transactional
@@ -178,10 +214,11 @@ public class InventoryTransactionService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.TRANSACTION_NOT_FOUND));
 
         if (transaction.getStatus() == TransactionStatus.COMPLETED) {
-            throw new IllegalStateException("Không thể xóa giao dịch đã hoàn thành");
+            throw new BusinessException(ErrorCode.CANNOT_DELETE_COMPLETED_TRANSACTION);
         }
 
         transactionRepository.deleteById(id);
+        log.info("Xóa giao dịch: Code={}", transaction.getTransactionCode());
     }
 
     private String generateTransactionCode(String type) {

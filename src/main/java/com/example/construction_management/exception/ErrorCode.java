@@ -86,6 +86,21 @@ public enum ErrorCode {
     SALARY_NOT_FOUND(404, "Không tìm thấy bảng lương",HttpStatus.BAD_REQUEST),
     SALARY_ALREADY_EXISTS(400, "Bảng lương cho kỳ này đã tồn tại",HttpStatus.BAD_REQUEST),
     SALARY_ALREADY_PAID(400, "Bảng lương đã được trả, không thể sửa/xóa",HttpStatus.BAD_REQUEST),
+    TRANSACTION_ALREADY_COMPLETED(7002, "Giao dịch đã hoàn thành", HttpStatus.BAD_REQUEST),
+    TRANSACTION_ALREADY_CANCELLED(7003, "Giao dịch đã bị hủy", HttpStatus.BAD_REQUEST),
+    CANNOT_COMPLETE_CANCELLED_TRANSACTION(7004, "Không thể hoàn thành giao dịch đã hủy", HttpStatus.BAD_REQUEST),
+    CANNOT_CANCEL_COMPLETED_TRANSACTION(7005, "Không thể hủy giao dịch đã hoàn thành", HttpStatus.BAD_REQUEST),
+    CANNOT_DELETE_COMPLETED_TRANSACTION(7006, "Không thể xóa giao dịch đã hoàn thành", HttpStatus.BAD_REQUEST),
+
+    // Inventory related
+    INVENTORY_BALANCE_NOT_FOUND(8002, "Không tìm thấy thông tin tồn kho", HttpStatus.NOT_FOUND),
+    STOCK_SYNC_ERROR(8003, "Lỗi đồng bộ tồn kho", HttpStatus.INTERNAL_SERVER_ERROR),
+    NEGATIVE_STOCK_NOT_ALLOWED(8004, "Số lượng tồn kho không được âm", HttpStatus.BAD_REQUEST),
+    CANNOT_DELETE_PRODUCT_WITH_STOCK(3003, "Không thể xóa sản phẩm còn tồn kho", HttpStatus.BAD_REQUEST),
+
+
+    // Customer related
+    CUSTOMER_CODE_EXISTS(9002, "Mã khách hàng đã tồn tại", HttpStatus.BAD_REQUEST),
 
     // Department errors (2201-2299)
 
