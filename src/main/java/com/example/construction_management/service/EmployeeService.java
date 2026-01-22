@@ -13,6 +13,7 @@ import com.example.construction_management.repository.EmployeeRepository;
 import com.example.construction_management.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -62,97 +63,35 @@ public class EmployeeService {
      */
     @Transactional
     public EmployeeResponse createEmployee(EmployeeRequest request) {
-        log.info("Creating new employee: {}", request.getName());
+        // Tìm Department
+        Department department = departmentRepository.findById(request.getDepartmentId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.DEPARTMENT_NOT_FOUND));
 
-        // Bước 1: Tìm Department CÓ SẴN trong database theo tên
-        // Nếu không tìm thấy -> throw exception
-        Department existingDepartment = findDepartmentByName(request.getDepartmentName());
-        log.info("Found existing department with id: {} and name: {}",
-                existingDepartment.getId(), existingDepartment.getName());
 
-        // Bước 2: Map request -> Employee entity (chưa có department)
-        Employee newEmployee = employeeMapper.toEmployee(request);
 
-        // Bước 3: Gán Department object vào Employee
-        // JPA sẽ TỰ ĐỘNG lấy existingDepartment.getId()
-        // và INSERT vào cột department_id trong bảng employees
-        newEmployee.setDepartment(existingDepartment);
 
-        // Bước 4: Lưu Employee vào database
-        // SQL: INSERT INTO employees (name, phone, salary, hire_date, department_id)
-        //      VALUES ('John', '0123...', 5000.00, '2024-01-01', 5) <- ID của department
-        Employee savedEmployee = employeeRepository.save(newEmployee);
-        log.info("Employee created successfully with id: {} under department_id: {}",
-                savedEmployee.getId(), savedEmployee.getDepartment().getId());
 
-        return employeeMapper.toResponse(savedEmployee);
+        // Map và tạo Employee
+        Employee employee = Employee.builder()
+                .name(request.getName())
+                .gender(request.getGender())
+                .birthDate(request.getBirthDate())
+                .phone(request.getPhone())
+                .email(request.getEmail())
+                .idCard(request.getIdCard())
+                .address(request.getAddress())
+                .department(department)
+                .baseSalary(request.getBaseSalary())
+                .startDate(request.getStartDate())
+                .active(true)
+                .build();
+
+        Employee saved = employeeRepository.save(employee);
+        return employeeMapper.toResponse(saved);
     }
-
     /**
      * Cập nhật thông tin nhân viên
      * Logic: Tìm Department mới (nếu có) -> Update department_id trong Employee
-     */
-    @Transactional
-    public EmployeeResponse updateEmployee(Long employeeId, EmployeeRequest request) {
-        log.info("Updating employee with id: {}", employeeId);
-
-        // Tìm employee hiện tại trong DB
-        Employee employee = employeeRepository.findById(employeeId)
-                .orElseThrow(() -> {
-                    log.error("Employee not found with id: {}", employeeId);
-                    return new BusinessException(ErrorCode.USER_NOT_FOUND);
-                });
-
-        // Cập nhật các trường cơ bản
-        if (request.getName() != null && !request.getName().trim().isEmpty()) {
-            employee.setName(request.getName());
-        }
-
-        if (request.getPhone() != null) {
-            employee.setPhone(request.getPhone());
-        }
-
-        if (request.getSalary() != null) {
-            employee.setSalary(request.getSalary());
-        }
-
-        if (request.getSalary() != null) {
-
-        }
-
-        if (request.getHireDate() != null) {
-            employee.setHireDate(request.getHireDate());
-        }
-
-        // Cập nhật department_id nếu có thay đổi
-        if (request.getDepartmentName() != null && !request.getDepartmentName().trim().isEmpty()) {
-            String currentDeptName = employee.getDepartment() != null
-                    ? employee.getDepartment().getName()
-                    : null;
-
-            // Chỉ update nếu tên department thay đổi
-            if (!request.getDepartmentName().equals(currentDeptName)) {
-                // Tìm Department CÓ SẴN theo tên mới
-                Department existingNewDepartment = findDepartmentByName(request.getDepartmentName());
-
-                // Gán Department object -> JPA tự động update department_id
-                employee.setDepartment(existingNewDepartment);
-
-                log.info("Department updated from '{}' (id={}) to '{}' (id={})",
-                        currentDeptName,
-                        employee.getDepartment() != null ? employee.getDepartment().getId() : null,
-                        existingNewDepartment.getName(),
-                        existingNewDepartment.getId());
-            }
-        }
-
-        // Save sẽ UPDATE cột department_id trong bảng employees
-        // SQL: UPDATE employees SET department_id = ? WHERE id = ?
-        Employee updatedEmployee = employeeRepository.save(employee);
-        log.info("Employee updated successfully with id: {}", employeeId);
-
-        return employeeMapper.toResponse(updatedEmployee);
-    }
 
     /**
      * Xóa nhân viên
@@ -203,4 +142,16 @@ public class EmployeeService {
 
         return department;
     }
+
+    @Transactional(readOnly = true)
+    public List<EmployeeResponse> getEmployeesWithoutAccount() {
+        log.info("Fetching employees without account");
+        return employeeRepository.findEmployeesWithoutAccount().stream()
+                .map(employeeMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+
+
+
 }

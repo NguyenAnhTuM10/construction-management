@@ -77,7 +77,17 @@ public enum ErrorCode {
     CANNOT_DELETE_ADMIN(4001, "Cannot delete admin user", HttpStatus.BAD_REQUEST),
     CANNOT_LOCK_ADMIN(4002, "Cannot lock admin user", HttpStatus.BAD_REQUEST),
 
-    ; // End of Enum constants
+    EMAIL_ALREADY_EXISTS(2002, "Email đã tồn tại", HttpStatus.BAD_REQUEST),
+    PHONE_ALREADY_EXISTS(2003, "Số điện thoại đã tồn tại", HttpStatus.BAD_REQUEST),
+    ID_CARD_ALREADY_EXISTS(2004, "Số CCCD/CMND đã tồn tại", HttpStatus.BAD_REQUEST),
+    EMPLOYEE_HAS_USER_ACCOUNT(2005, "Nhân viên đã có tài khoản người dùng", HttpStatus.BAD_REQUEST),
+    EMPLOYEE_INACTIVE(2006, "Nhân viên không còn hoạt động", HttpStatus.BAD_REQUEST),
+
+    // Department errors (2201-2299)
+
+    DEPARTMENT_IN_USE(2203, "Phòng ban đang có nhân viên, không thể xóa", HttpStatus.BAD_REQUEST),
+
+    EMPLOYEE_ALREADY_HAS_ACCOUNT(2004,"EMPLOYEE_ALREADY_HAS_ACCOUNT" ,HttpStatus.BAD_REQUEST ); // End of Enum constants
 
     private final int code;
     private final String message;

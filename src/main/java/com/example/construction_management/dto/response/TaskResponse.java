@@ -33,4 +33,5 @@ public class TaskResponse {
     // Helper fields
     private Boolean isOverdue;
     private Long daysUntilDeadline;
+    private Integer progress;  // ✅ Phải có field này
 }

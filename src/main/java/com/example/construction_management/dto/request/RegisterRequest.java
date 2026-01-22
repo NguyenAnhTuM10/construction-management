@@ -25,4 +25,6 @@ public class RegisterRequest {
 
     // Giả định để gán quyền ban đầu
     private String roleName;
+
+    private Long employeeId;  // Optional - liên kết với nhân viên
 }

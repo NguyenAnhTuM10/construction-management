@@ -16,4 +16,5 @@ public class TaskSummaryResponse {
     private String priority;
     private LocalDateTime deadline;
     private Boolean isOverdue;
+    private Integer progress;  // ✅ Phải có field này
 }

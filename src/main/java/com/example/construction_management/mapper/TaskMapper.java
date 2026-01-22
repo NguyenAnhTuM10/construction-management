@@ -18,6 +18,7 @@ public interface TaskMapper {
     @Mapping(target = "assignedToDepartment", source = "assignedTo.department.name")
     @Mapping(target = "assignedById", source = "assignedBy.id")
     @Mapping(target = "assignedByUsername", source = "assignedBy.username")
+    @Mapping(target = "progress", source = "progress")  // ✅ THÊM DÒNG NÀY
     @Mapping(target = "isOverdue", expression = "java(isOverdue(task))")
     @Mapping(target = "daysUntilDeadline", expression = "java(calculateDaysUntilDeadline(task))")
     TaskResponse toResponse(Task task);

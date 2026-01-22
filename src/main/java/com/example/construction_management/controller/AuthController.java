@@ -12,6 +12,7 @@ import com.example.construction_management.service.AuthService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/auth")
+@Slf4j
 @Tag(name = "Authentication", description = "Endpoints for user login, token refresh and user info")
 public class AuthController {
 
@@ -67,16 +69,15 @@ public class AuthController {
 
     // ✅ 4. Endpoint Register User: Sạch sẽ
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<RegisterResponse>> registerUser(
-            @Valid @RequestBody RegisterRequest registerRequest) {
+    public ResponseEntity<RegisterResponse> register(
+            @Valid @RequestBody RegisterRequest request) {  // ✅ Phải có @RequestBody
 
-        // Service ném BusinessException nếu user đã tồn tại (USER_EXISTED)
-        RegisterResponse response = authService.register(registerRequest);
+        // ✅ THÊM LOG ĐỂ DEBUG
+        log.info("Controller received: {}", request);
+        log.info("EmployeeId from controller: {}", request.getEmployeeId());
 
-        // Trả về 201 Created là chuẩn hơn cho hành động tạo tài nguyên
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(ApiResponse.success(response, "User registered successfully"));
+        RegisterResponse response = authService.register(request);
+        return ResponseEntity.ok(response);
     }
 
     // ✅ 5. Endpoint Logout: Sạch sẽ

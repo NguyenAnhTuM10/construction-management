@@ -161,6 +161,7 @@ public class OrderService {
         }
 
         order.setTotal(total);
+        order.setRemainingDebt(total);
         Order savedOrder = orderRepository.save(order);
 
         log.info("Order created successfully with id: {}", savedOrder.getId());

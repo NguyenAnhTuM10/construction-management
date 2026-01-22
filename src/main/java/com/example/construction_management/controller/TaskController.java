@@ -126,4 +126,12 @@ public class TaskController {
             @Valid @RequestBody TaskResultRequest request) {
         return ResponseEntity.ok(ApiResponse.success(taskService.submitTaskResult(id, request)));
     }
+
+
+    // TaskController.java - Thêm endpoint mới
+    @PostMapping("/{id}/start")
+    @Operation(summary = "Start task (Employee)")
+    public ResponseEntity<ApiResponse<TaskResponse>> startTask(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(taskService.startTask(id)));
+    }
 }

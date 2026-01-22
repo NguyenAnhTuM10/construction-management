@@ -7,6 +7,7 @@ import com.example.construction_management.dto.request.RegisterRequest;
 import com.example.construction_management.dto.response.LoginResponse;
 import com.example.construction_management.dto.response.RegisterResponse;
 import com.example.construction_management.dto.response.UserResponse;
+import com.example.construction_management.entity.Employee;
 import com.example.construction_management.entity.RefreshToken;
 import com.example.construction_management.entity.Role;
 import com.example.construction_management.entity.User;
@@ -16,6 +17,7 @@ import com.example.construction_management.exception.ErrorCode;
 // Loại bỏ các exception cũ: InvalidTokenException, UserNotAuthenticatedException, UserNotFoundException...
 
 import com.example.construction_management.mapper.UserMapper;
+import com.example.construction_management.repository.EmployeeRepository;
 import com.example.construction_management.repository.RefreshTokenRepository;
 import com.example.construction_management.repository.RoleRepository;
 import com.example.construction_management.repository.UserRepository;
@@ -30,13 +32,16 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
+import lombok.extern.slf4j.Slf4j;
 import java.time.Instant;
 import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+
+
+@Slf4j
 public class AuthService {
 
     private final AuthenticationManager authenticationManager;
@@ -47,6 +52,7 @@ public class AuthService {
     private final RoleRepository roleRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final UserMapper userMapper;
+    private final EmployeeRepository employeeRepository;  // ✅ THÊM
 
 
     public LoginResponse login(LoginRequest loginRequest) {
@@ -163,48 +169,92 @@ public class AuthService {
         return userMapper.toUserResponse(user);
     }
 
-    // --- 4. Register (Sử dụng BusinessException) ---
     public RegisterResponse register(RegisterRequest registerRequest) {
 
-        // 1. Kiểm tra username/email đã tồn tại chưa
+        // ✅ THÊM LOG ĐỂ DEBUG
+        log.info("=== REGISTER REQUEST ===");
+        log.info("Username: {}", registerRequest.getUsername());
+        log.info("Email: {}", registerRequest.getEmail());
+        log.info("EmployeeId: {}", registerRequest.getEmployeeId());
+        log.info("EmployeeId class: {}", registerRequest.getEmployeeId() != null ?
+                registerRequest.getEmployeeId().getClass().getName() : "null");
+        log.info("Is EmployeeId null? {}", registerRequest.getEmployeeId() == null);
+        log.info("========================");
+
+        // Kiểm tra username/email đã tồn tại
         if (userRepository.existsByUsername(registerRequest.getUsername())) {
-            // ✅ Thay thế UserAlreadyExistsException
             throw new BusinessException(ErrorCode.USER_EXISTED);
         }
-        if (userRepository.existsByEmail(registerRequest.getEmail())) {
-            // ✅ Thay thế UserAlreadyExistsException
-            throw new BusinessException(ErrorCode.USER_EXISTED);
+//        if (userRepository.existsByEmail(registerRequest.getEmail())) {
+//            throw new BusinessException(ErrorCode.EMAIL_ALREADY_EXISTS);
+//        }
+
+        // Xử lý liên kết Employee
+        Employee employee = null;
+        log.info("Before check: employeeId = {}", registerRequest.getEmployeeId()); // ✅ THÊM
+
+        if (registerRequest.getEmployeeId() != null) {
+            log.info("Inside if block - fetching employee..."); // ✅ THÊM
+            employee = employeeRepository.findById(registerRequest.getEmployeeId())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.EMPLOYEE_NOT_FOUND));
+
+            log.info("Employee found: {}", employee.getId()); // ✅ THÊM
+
+            // Kiểm tra employee đã có tài khoản chưa
+            if (userRepository.findByEmployeeId(registerRequest.getEmployeeId()).isPresent()) {
+                throw new BusinessException(ErrorCode.EMPLOYEE_ALREADY_HAS_ACCOUNT);
+            }
+        } else {
+            log.warn("EmployeeId is NULL - skipping employee linking"); // ✅ THÊM
         }
 
-        // 2. Mã hóa mật khẩu
+        log.info("After check: employee = {}", employee); // ✅ THÊM
+
+        // Mã hóa mật khẩu
         String encodedPassword = passwordEncoder.encode(registerRequest.getPassword());
 
-        // 3. Gán Role mặc định
-        String requestedRole = registerRequest.getRoleName() != null ? registerRequest.getRoleName().toUpperCase() : "USER";
-
-        // Tìm kiếm Role trong DB
+        // Gán Role
+        String requestedRole = registerRequest.getRoleName() != null
+                ? registerRequest.getRoleName().toUpperCase() : "USER";
         Role userRole = roleRepository.findByName(requestedRole)
-                // ✅ Thay thế RoleNotFoundException
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROLE_NOT_FOUND));
 
-        // 4. Tạo đối tượng User
-        User user = new User();
-        user.setUsername(registerRequest.getUsername());
-        user.setEmail(registerRequest.getEmail());
-        user.setPassword(encodedPassword);
-        user.setRole(userRole);
+        // Tạo User
+        User user = User.builder()
+                .username(registerRequest.getUsername())
+                .email(registerRequest.getEmail())
+                .password(encodedPassword)
+                .role(userRole)
+                .employee(employee)
+                .locked(false)
+                .build();
 
-        // 5. Lưu vào Database
-        User savedUser = userRepository.save(user);
+        // ✅ THÊM: Đồng bộ quan hệ hai chiều
+        if (employee != null) {
+            employee.setUser(user);  // Set ngược lại
+        }
 
-        // 6. Trả về Response
+        User savedUser = userRepository.saveAndFlush(user);
+
+        // ✅ Log để debug
+        log.info("User saved: id={}, employeeId={}",
+                savedUser.getId(),
+                savedUser.getEmployee() != null ? savedUser.getEmployee().getId() : "null"
+        );
+
+// ✅ Verify lại từ database
+        User verifiedUser = userRepository.findById(savedUser.getId())
+                .orElseThrow();
+        log.info("Verified from DB: employeeId={}",
+                verifiedUser.getEmployee() != null ? verifiedUser.getEmployee().getId() : "null"
+        );
+
         return RegisterResponse.builder()
                 .id(savedUser.getId())
                 .username(savedUser.getUsername())
                 .email(savedUser.getEmail())
                 .build();
     }
-
     // --- 5. Logout (Không ném exception nghiệp vụ) ---
     public void logout(String refreshToken) {
         if (refreshToken == null || refreshToken.isEmpty()) {

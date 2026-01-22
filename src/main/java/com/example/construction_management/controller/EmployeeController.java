@@ -23,6 +23,14 @@ public class EmployeeController {
 
     private final EmployeeService employeeService;
 
+
+
+    // ✅ THÊM MỚI: API cho dropdown "Liên kết nhân viên"
+    @GetMapping("/without-account")
+    public ResponseEntity<ApiResponse<List<EmployeeResponse>>> getEmployeesWithoutAccount() {
+        List<EmployeeResponse> employees = employeeService.getEmployeesWithoutAccount();
+        return ResponseEntity.ok(ApiResponse.success(employees, "Employees without account retrieved"));
+    }
     // GET /employees
     @GetMapping
     public ResponseEntity<ApiResponse<List<EmployeeResponse>>> getAllEmployees() {
@@ -48,15 +56,15 @@ public class EmployeeController {
                 .body(ApiResponse.success(newEmployee, "Employee created successfully"));
     }
 
-    // PUT /employees/{id}
-    @PutMapping("/{employeeId}")
-    public ResponseEntity<ApiResponse<EmployeeResponse>> updateEmployee(
-            @PathVariable Long employeeId,
-            @Valid @RequestBody EmployeeRequest request) {
-
-        EmployeeResponse updatedEmployee = employeeService.updateEmployee(employeeId, request);
-        return ResponseEntity.ok(ApiResponse.success(updatedEmployee, "Employee updated successfully"));
-    }
+//    // PUT /employees/{id}
+//    @PutMapping("/{employeeId}")
+//    public ResponseEntity<ApiResponse<EmployeeResponse>> updateEmployee(
+//            @PathVariable Long employeeId,
+//            @Valid @RequestBody EmployeeRequest request) {
+//
+//        EmployeeResponse updatedEmployee = employeeService.updateEmployee(employeeId, request);
+//        return ResponseEntity.ok(ApiResponse.success(updatedEmployee, "Employee updated successfully"));
+//    }
 
     // DELETE /employees/{id}
     @DeleteMapping("/{employeeId}")
@@ -65,4 +73,7 @@ public class EmployeeController {
         employeeService.deleteEmployee(employeeId);
         return ResponseEntity.ok(ApiResponse.success(null, "Employee deleted successfully"));
     }
+
+
+
 }

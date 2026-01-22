@@ -1,41 +1,50 @@
 package com.example.construction_management.dto.request;
 
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PastOrPresent;
+import jakarta.validation.constraints.*;
 import lombok.*;
-import org.springframework.format.annotation.DateTimeFormat;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-/**
- * DTO dùng để tạo hoặc cập nhật thông tin nhân viên (dành cho Admin/Manager).
- * Giả định: Các trường validation message sẽ được ánh xạ tới ErrorCode.
- */
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class EmployeeRequest {
 
-    @NotBlank(message = "USERNAME_INVALID") // Sử dụng ErrorCode cho validation message
+    @NotBlank(message = "Tên không được để trống")
+    @Size(min = 2, max = 100, message = "Tên phải từ 2-100 ký tự")
     private String name;
 
+    private String gender; // MALE, FEMALE
+
+    private LocalDate birthDate;
+
+    @Pattern(regexp = "^(\\+84|0)[0-9]{9,10}$", message = "Số điện thoại không hợp lệ")
     private String phone;
 
-    // Giả định: Department ID
-    @NotNull(message = "Department not exists") // Dùng tạm ROLE_NOT_FOUND để kiểm tra Department ID
-    private String departmentName;
+    @Email(message = "Email không hợp lệ")
+    private String email;
 
-    @NotNull(message = "SALARY_INVALID")
-    @DecimalMin(value = "0.00", inclusive = false, message = "SALARY_INVALID")
-    private BigDecimal salary;
+    @Pattern(regexp = "^[0-9]{9,12}$", message = "Số CCCD/CMND không hợp lệ")
+    private String idCard;
 
-    @NotNull(message = "HIRE_DATE_INVALID")
-    @PastOrPresent(message = "HIRE_DATE_INVALID")
-    @DateTimeFormat(pattern = "yyyy-MM-dd")
-    private LocalDate hireDate;
+    @Size(max = 500, message = "Địa chỉ tối đa 500 ký tự")
+    private String address;
+
+    @NotNull(message = "Phòng ban không được để trống")
+    private Long departmentId;
+
+    @NotNull(message = "Lương cơ bản không được để trống")
+    @DecimalMin(value = "0", message = "Lương không được âm")
+    private BigDecimal baseSalary;
+
+    @NotNull(message = "Ngày vào làm không được để trống")
+    private LocalDate startDate;
+
+    private LocalDate endDate;
+
+    private String note;
+
+    private Boolean active = true;
 }

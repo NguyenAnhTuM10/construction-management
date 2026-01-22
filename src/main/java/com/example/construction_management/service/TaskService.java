@@ -154,22 +154,53 @@ public class TaskService {
     public TaskResponse submitTaskResult(Long id, TaskResultRequest request) {
         Task task = findTaskById(id);
 
-        // Kiểm tra nhân viên có được giao task này không
+        // Lấy thông tin user hiện tại
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = findUserByUsername(username);
 
-        if (user.getEmployee() == null ||
-                !user.getEmployee().getId().equals(task.getAssignedTo().getId())) {
-            throw new IllegalStateException("Bạn không có quyền nộp kết quả cho task này");
+        // ✅ KIỂM TRA QUYỀN: Cho phép ADMIN hoặc Employee được giao
+        boolean isAdmin = user.getRole() != null &&
+                "ADMIN".equals(user.getRole().getName());
+
+        boolean isAssignedEmployee = user.getEmployee() != null &&
+                user.getEmployee().getId().equals(task.getAssignedTo().getId());
+
+        if (!isAdmin && !isAssignedEmployee) {
+            throw new IllegalStateException("Bạn không có quyền thao tác task này");
         }
 
-        task.setResult(request.getResult());
-        task.setStatus(TaskStatus.COMPLETED);
-        task.setCompletedDate(LocalDateTime.now());
+        // ✅ Cập nhật progress
+        if (request.getProgress() != null) {
+            if (request.getProgress() < 0 || request.getProgress() > 100) {
+                throw new IllegalArgumentException("Progress phải từ 0-100");
+            }
+            task.setProgress(request.getProgress());
+        }
 
-        return taskMapper.toResponse(taskRepository.save(task));
+        // Cập nhật result
+        if (request.getResult() != null && !request.getResult().isEmpty()) {
+            task.setResult(request.getResult());
+        }
+
+        // ✅ Cập nhật status
+        if (request.getStatus() != null && !request.getStatus().isEmpty()) {
+            try {
+                TaskStatus newStatus = TaskStatus.valueOf(request.getStatus());
+                task.setStatus(newStatus);
+
+                // Tự động set completedDate và progress khi COMPLETED
+                if (newStatus == TaskStatus.COMPLETED) {
+                    task.setCompletedDate(LocalDateTime.now());
+                    task.setProgress(100); // Auto 100%
+                }
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Status không hợp lệ: " + request.getStatus());
+            }
+        }
+
+        Task saved = taskRepository.save(task);
+        return taskMapper.toResponse(saved);
     }
-
     @Transactional
     public void deleteTask(Long id) {
         if (!taskRepository.existsById(id)) {
@@ -192,5 +223,27 @@ public class TaskService {
     private User findUserByUsername(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new BusinessException(ErrorCode.TASK_NOT_EXITS));
+    }
+
+    @Transactional
+    public TaskResponse startTask(Long id) {
+        Task task = findTaskById(id);
+
+        // Kiểm tra nhân viên có được giao task này không
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = findUserByUsername(username);
+
+        if (user.getEmployee() == null ||
+                !user.getEmployee().getId().equals(task.getAssignedTo().getId())) {
+            throw new IllegalStateException("Bạn không có quyền thao tác task này");
+        }
+
+        // Chỉ cho phép start từ TODO
+        if (task.getStatus() != TaskStatus.TODO) {
+            throw new IllegalStateException("Chỉ có thể bắt đầu task ở trạng thái TODO");
+        }
+
+        task.setStatus(TaskStatus.IN_PROGRESS);
+        return taskMapper.toResponse(taskRepository.save(task));
     }
 }

@@ -61,4 +61,10 @@ public class Task {
 
     @LastModifiedDate
     private LocalDateTime lastModifiedDate;
+
+
+    // ✅ THÊM FIELD NÀY
+    @Column
+    @Builder.Default
+    private Integer progress = 0;
 }

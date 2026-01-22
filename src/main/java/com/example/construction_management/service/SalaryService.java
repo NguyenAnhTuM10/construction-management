@@ -122,7 +122,7 @@ public class SalaryService {
                 .year(request.getYear())
                 .month(request.getMonth())
                 .workDays(request.getWorkDays())
-                .basicSalary(employee.getSalary())
+                .basicSalary(employee.getBaseSalary())
                 .bonus(request.getBonus() != null ? request.getBonus() : BigDecimal.ZERO)
                 .deduction(request.getDeduction() != null ? request.getDeduction() : BigDecimal.ZERO)
                 .note(request.getNote())

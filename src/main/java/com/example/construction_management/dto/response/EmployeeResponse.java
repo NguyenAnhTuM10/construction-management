@@ -4,12 +4,9 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
-/**
- * DTO chứa thông tin chi tiết của nhân viên.
- */
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -17,8 +14,30 @@ public class EmployeeResponse {
 
     private Long id;
     private String name;
+    private String gender;
+    private LocalDate birthDate;
     private String phone;
+    private String email;
+    private String idCard;
+    private String address;
+
+    // Department info
+    private Long departmentId;
     private String departmentName;
-    private BigDecimal salary;
-    private LocalDate hireDate;
+
+    // Salary info
+    private BigDecimal baseSalary;
+
+    private LocalDate startDate;
+    private LocalDate endDate;
+    private String note;
+    private Boolean active;
+
+    // User info (nếu có liên kết)
+    private Long userId;
+    private String username;
+    private Boolean hasUserAccount;
+
+    private LocalDateTime createdDate;
+    private LocalDateTime updatedDate;
 }

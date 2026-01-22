@@ -30,7 +30,7 @@ public class User {
     @JoinColumn(name = "role_id", foreignKey = @ForeignKey(name = "FK_user_role"))
     private Role role;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.PERSIST)
     @JoinColumn(name = "employee_id", foreignKey = @ForeignKey(name = "FK_user_employee"))
     private Employee employee;
 
