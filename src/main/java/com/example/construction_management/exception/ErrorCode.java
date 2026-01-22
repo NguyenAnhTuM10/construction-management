@@ -83,6 +83,10 @@ public enum ErrorCode {
     EMPLOYEE_HAS_USER_ACCOUNT(2005, "Nhân viên đã có tài khoản người dùng", HttpStatus.BAD_REQUEST),
     EMPLOYEE_INACTIVE(2006, "Nhân viên không còn hoạt động", HttpStatus.BAD_REQUEST),
 
+    SALARY_NOT_FOUND(404, "Không tìm thấy bảng lương",HttpStatus.BAD_REQUEST),
+    SALARY_ALREADY_EXISTS(400, "Bảng lương cho kỳ này đã tồn tại",HttpStatus.BAD_REQUEST),
+    SALARY_ALREADY_PAID(400, "Bảng lương đã được trả, không thể sửa/xóa",HttpStatus.BAD_REQUEST),
+
     // Department errors (2201-2299)
 
     DEPARTMENT_IN_USE(2203, "Phòng ban đang có nhân viên, không thể xóa", HttpStatus.BAD_REQUEST),

@@ -1,308 +1,222 @@
 package com.example.construction_management.service;
 
-
-import com.example.construction_management.dto.request.SalaryCreateRequest;
-import com.example.construction_management.dto.request.SalaryUpdateRequest;
+import com.example.construction_management.dto.request.SalaryRequest;
 import com.example.construction_management.dto.response.SalaryResponse;
-import com.example.construction_management.dto.response.SalaryStatisticsResponse;
-import com.example.construction_management.dto.response.SalarySummaryResponse;
 import com.example.construction_management.entity.Employee;
 import com.example.construction_management.entity.Salary;
+import com.example.construction_management.entity.User;
 import com.example.construction_management.exception.BusinessException;
 import com.example.construction_management.exception.ErrorCode;
 import com.example.construction_management.mapper.SalaryMapper;
 import com.example.construction_management.repository.EmployeeRepository;
 import com.example.construction_management.repository.SalaryRepository;
+import com.example.construction_management.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.List;
 
-/**
- * Service xử lý business logic cho Salary
- */
+@Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional
-@Slf4j
 public class SalaryService {
 
     private final SalaryRepository salaryRepository;
     private final EmployeeRepository employeeRepository;
+    private final UserRepository userRepository;
     private final SalaryMapper salaryMapper;
+
+    // Hệ số tăng ca mặc định
+    private static final double OVERTIME_RATE = 1.5;
 
     /**
      * Lấy tất cả bảng lương
      */
     @Transactional(readOnly = true)
-    public List<SalarySummaryResponse> getAllSalaries() {
-        log.info("Getting all salaries");
-        List<Salary> salaries = salaryRepository.findAll();
-        return salaryMapper.toSummaryResponseList(salaries);
+    public List<SalaryResponse> getAllSalaries() {
+        return salaryMapper.toResponseList(salaryRepository.findAll());
     }
 
     /**
-     * Lấy chi tiết bảng lương theo ID
+     * Lấy bảng lương theo ID
      */
     @Transactional(readOnly = true)
     public SalaryResponse getSalaryById(Long id) {
-        log.info("Getting salary by id: {}", id);
-        Salary salary = findSalaryById(id);
+        Salary salary = salaryRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.SALARY_NOT_FOUND));
         return salaryMapper.toResponse(salary);
     }
 
     /**
-     * Lấy bảng lương của nhân viên
+     * Lấy bảng lương theo kỳ
      */
     @Transactional(readOnly = true)
-    public List<SalarySummaryResponse> getSalariesByEmployee(Long employeeId) {
-        log.info("Getting salaries by employee: {}", employeeId);
-
-        // Validate employee exists
-        if (!employeeRepository.existsById(employeeId)) {
-            throw new BusinessException(ErrorCode.EMPLOYEE_NOT_FOUND );
-        }
-
-        List<Salary> salaries = salaryRepository.findByEmployeeId(employeeId);
-        return salaryMapper.toSummaryResponseList(salaries);
+    public List<SalaryResponse> getSalariesByPeriod(Integer month, Integer year) {
+        return salaryMapper.toResponseList(salaryRepository.findByMonthAndYear(month, year));
     }
 
     /**
-     * Lấy bảng lương theo tháng
+     * Lấy bảng lương theo nhân viên
      */
     @Transactional(readOnly = true)
-    public List<SalarySummaryResponse> getSalariesByMonth(Integer year, Integer month) {
-        log.info("Getting salaries by month: {}/{}", year, month);
-
-        validateYearMonth(year, month);
-
-        List<Salary> salaries = salaryRepository.findByYearAndMonth(year, month);
-        return salaryMapper.toSummaryResponseList(salaries);
-    }
-
-    /**
-     * Lấy bảng lương chưa thanh toán
-     */
-    @Transactional(readOnly = true)
-    public List<SalarySummaryResponse> getUnpaidSalaries() {
-        log.info("Getting unpaid salaries");
-        List<Salary> salaries = salaryRepository.findByIsPaid(false);
-        return salaryMapper.toSummaryResponseList(salaries);
+    public List<SalaryResponse> getSalariesByEmployee(Long employeeId) {
+        return salaryMapper.toResponseList(salaryRepository.findByEmployeeId(employeeId));
     }
 
     /**
      * Tạo bảng lương mới
      */
-    public SalaryResponse createSalary(SalaryCreateRequest request) {
-        log.info("Creating salary for employee: {} - {}/{}",
-                request.getEmployeeId(), request.getYear(), request.getMonth());
-
-        // Validate employee
+    @Transactional
+    public SalaryResponse createSalary(SalaryRequest request) {
+        // Kiểm tra nhân viên tồn tại
         Employee employee = employeeRepository.findById(request.getEmployeeId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.EMPLOYEE_NOT_FOUND));
 
-        // Validate year/month
-        validateYearMonth(request.getYear(), request.getMonth());
-
-        // Check duplicate
-        if (salaryRepository.existsByEmployeeIdAndYearAndMonth(
-                request.getEmployeeId(), request.getYear(), request.getMonth())) {
-            throw new BusinessException(
-                    ErrorCode.DUPLICATE_RESOURCE
-            );
+        // Kiểm tra đã có bảng lương cho kỳ này chưa
+        if (salaryRepository.existsByEmployeeIdAndMonthAndYear(
+                request.getEmployeeId(), request.getMonth(), request.getYear())) {
+            throw new BusinessException(ErrorCode.SALARY_ALREADY_EXISTS);
         }
 
-        // Create salary (lấy basicSalary từ Employee)
+        // Lấy user hiện tại
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByUsername(username).orElse(null);
+
+        // Tính lương tăng ca
+        BigDecimal overtimePay = calculateOvertimePay(
+                employee.getBaseSalary(),
+                request.getWorkDays(),
+                request.getOvertimeHours()
+        );
+
+        // Tạo bảng lương
         Salary salary = Salary.builder()
                 .employee(employee)
-                .year(request.getYear())
                 .month(request.getMonth())
+                .year(request.getYear())
                 .workDays(request.getWorkDays())
-                .basicSalary(employee.getBaseSalary())
+                .actualWorkDays(request.getActualWorkDays())
+                .leaveDays(request.getLeaveDays())
+                .overtimeHours(request.getOvertimeHours())
+                .baseSalary(employee.getBaseSalary())
                 .bonus(request.getBonus() != null ? request.getBonus() : BigDecimal.ZERO)
+                .allowance(request.getAllowance() != null ? request.getAllowance() : BigDecimal.ZERO)
+                .overtimePay(overtimePay)
                 .deduction(request.getDeduction() != null ? request.getDeduction() : BigDecimal.ZERO)
-                .note(request.getNote())
                 .isPaid(false)
-                .createdDate(LocalDateTime.now())
+                .note(request.getNote())
+                .createdBy(currentUser)
                 .build();
 
-        // totalSalary sẽ tự động tính bởi @PrePersist
+        // Tính tổng lương
+        salary.calculateTotalSalary();
 
-        Salary savedSalary = salaryRepository.save(salary);
-        log.info("Salary created successfully with id: {}", savedSalary.getId());
+        Salary saved = salaryRepository.save(salary);
+        log.info("Created salary for employee {} - period {}/{}",
+                employee.getName(), request.getMonth(), request.getYear());
 
-        return salaryMapper.toResponse(savedSalary);
+        return salaryMapper.toResponse(saved);
     }
 
     /**
      * Cập nhật bảng lương
      */
-    public SalaryResponse updateSalary(Long id, SalaryUpdateRequest request) {
-        log.info("Updating salary id: {}", id);
+    @Transactional
+    public SalaryResponse updateSalary(Long id, SalaryRequest request) {
+        Salary salary = salaryRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.SALARY_NOT_FOUND));
 
-        Salary salary = findSalaryById(id);
-
-        // Chỉ cho phép cập nhật khi chưa thanh toán
+        // Không cho sửa nếu đã trả lương
         if (salary.getIsPaid()) {
-            throw new BusinessException(
-                    ErrorCode.BUSINESS_ERROR
-            );
+            throw new BusinessException(ErrorCode.SALARY_ALREADY_PAID);
         }
 
-        // Update fields
-        if (request.getWorkDays() != null) {
-            salary.setWorkDays(request.getWorkDays());
-        }
-        if (request.getBonus() != null) {
-            salary.setBonus(request.getBonus());
-        }
-        if (request.getDeduction() != null) {
-            salary.setDeduction(request.getDeduction());
-        }
-        if (request.getNote() != null) {
-            salary.setNote(request.getNote());
-        }
+        // Cập nhật thông tin
+        salary.setWorkDays(request.getWorkDays());
+        salary.setActualWorkDays(request.getActualWorkDays());
+        salary.setLeaveDays(request.getLeaveDays());
+        salary.setOvertimeHours(request.getOvertimeHours());
+        salary.setBonus(request.getBonus() != null ? request.getBonus() : BigDecimal.ZERO);
+        salary.setAllowance(request.getAllowance() != null ? request.getAllowance() : BigDecimal.ZERO);
+        salary.setDeduction(request.getDeduction() != null ? request.getDeduction() : BigDecimal.ZERO);
+        salary.setNote(request.getNote());
 
-        // totalSalary sẽ tự động tính lại bởi @PreUpdate
+        // Tính lại lương tăng ca
+        BigDecimal overtimePay = calculateOvertimePay(
+                salary.getBaseSalary(),
+                request.getWorkDays(),
+                request.getOvertimeHours()
+        );
+        salary.setOvertimePay(overtimePay);
 
-        Salary updatedSalary = salaryRepository.save(salary);
-        log.info("Salary updated successfully: {}", id);
+        // Tính lại tổng lương
+        salary.calculateTotalSalary();
 
-        return salaryMapper.toResponse(updatedSalary);
+        return salaryMapper.toResponse(salaryRepository.save(salary));
     }
 
     /**
-     * Đánh dấu đã thanh toán
+     * Đánh dấu đã trả lương
      */
+    @Transactional
     public SalaryResponse markAsPaid(Long id) {
-        log.info("Marking salary as paid: {}", id);
-
-        Salary salary = findSalaryById(id);
+        Salary salary = salaryRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.SALARY_NOT_FOUND));
 
         if (salary.getIsPaid()) {
-            throw new BusinessException(
-                    ErrorCode.BUSINESS_ERROR
-
-            );
+            throw new BusinessException(ErrorCode.SALARY_ALREADY_PAID);
         }
 
         salary.setIsPaid(true);
-        salary.setPaidDate(LocalDateTime.now());
+        salary.setPaidDate(LocalDate.now());
 
-        Salary updatedSalary = salaryRepository.save(salary);
-        log.info("Salary marked as paid: {}", id);
+        log.info("Marked salary as paid: {} - {}/{}",
+                salary.getEmployeeName(), salary.getMonth(), salary.getYear());
 
-        return salaryMapper.toResponse(updatedSalary);
+        return salaryMapper.toResponse(salaryRepository.save(salary));
     }
 
     /**
-     * Hủy thanh toán (rollback)
+     * Xóa bảng lương
      */
-    public SalaryResponse markAsUnpaid(Long id) {
-        log.info("Marking salary as unpaid: {}", id);
-
-        Salary salary = findSalaryById(id);
-
-        if (!salary.getIsPaid()) {
-            throw new BusinessException(
-                    ErrorCode.BUSINESS_ERROR
-            );
-        }
-
-        salary.setIsPaid(false);
-        salary.setPaidDate(null);
-
-        Salary updatedSalary = salaryRepository.save(salary);
-        log.info("Salary marked as unpaid: {}", id);
-
-        return salaryMapper.toResponse(updatedSalary);
-    }
-
-    /**
-     * Xóa bảng lương (chỉ khi chưa thanh toán)
-     */
+    @Transactional
     public void deleteSalary(Long id) {
-        log.info("Deleting salary id: {}", id);
+        Salary salary = salaryRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.SALARY_NOT_FOUND));
 
-        Salary salary = findSalaryById(id);
-
+        // Không cho xóa nếu đã trả lương
         if (salary.getIsPaid()) {
-            throw new BusinessException(
-                    ErrorCode.BUSINESS_ERROR
-            );
+            throw new BusinessException(ErrorCode.SALARY_ALREADY_PAID);
         }
 
-        salaryRepository.deleteById(id);
-        log.info("Salary deleted successfully: {}", id);
+        salaryRepository.delete(salary);
+        log.info("Deleted salary: {} - {}/{}",
+                salary.getEmployeeName(), salary.getMonth(), salary.getYear());
     }
 
     /**
-     * Thống kê lương theo tháng
+     * Tính lương tăng ca
      */
-    @Transactional(readOnly = true)
-    public SalaryStatisticsResponse getStatisticsByMonth(Integer year, Integer month) {
-        log.info("Getting salary statistics for: {}/{}", year, month);
-
-        validateYearMonth(year, month);
-
-        List<Salary> salaries = salaryRepository.findByYearAndMonth(year, month);
-
-        BigDecimal totalSalary = salaries.stream()
-                .map(Salary::getTotalSalary)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal totalPaid = salaries.stream()
-                .filter(Salary::getIsPaid)
-                .map(Salary::getTotalSalary)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal totalUnpaid = salaries.stream()
-                .filter(s -> !s.getIsPaid())
-                .map(Salary::getTotalSalary)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        long paidRecords = salaries.stream().filter(Salary::getIsPaid).count();
-        long unpaidRecords = salaries.stream().filter(s -> !s.getIsPaid()).count();
-
-        return SalaryStatisticsResponse.builder()
-                .year(year)
-                .month(month)
-                .totalSalary(totalSalary)
-                .totalPaid(totalPaid)
-                .totalUnpaid(totalUnpaid)
-                .totalRecords((long) salaries.size())
-                .paidRecords(paidRecords)
-                .unpaidRecords(unpaidRecords)
-                .build();
-    }
-
-    /**
-     * Helper: Tìm salary hoặc throw exception
-     */
-    private Salary findSalaryById(Long id) {
-        return salaryRepository.findById(id)
-                .orElseThrow(() -> new BusinessException(
-                        ErrorCode.RESOURCE_NOT_FOUND
-                ));
-    }
-
-    /**
-     * Helper: Validate year và month
-     */
-    private void validateYearMonth(Integer year, Integer month) {
-        if (year < 2000 || year > 2100) {
-            throw new BusinessException(
-                    ErrorCode.INVALID_REQUEST
-            );
+    private BigDecimal calculateOvertimePay(BigDecimal baseSalary, Integer workDays, Double overtimeHours) {
+        if (overtimeHours == null || overtimeHours <= 0) {
+            return BigDecimal.ZERO;
         }
-        if (month < 1 || month > 12) {
-            throw new BusinessException(
-                    ErrorCode.INVALID_REQUEST
-            );
-        }
+
+        // Lương giờ = Lương cơ bản / số ngày / 8 giờ
+        BigDecimal hourlyRate = baseSalary
+                .divide(BigDecimal.valueOf(workDays), 2, RoundingMode.HALF_UP)
+                .divide(BigDecimal.valueOf(8), 2, RoundingMode.HALF_UP);
+
+        // Lương tăng ca = Lương giờ x Hệ số x Số giờ
+        return hourlyRate
+                .multiply(BigDecimal.valueOf(OVERTIME_RATE))
+                .multiply(BigDecimal.valueOf(overtimeHours))
+                .setScale(0, RoundingMode.HALF_UP);
     }
 }

@@ -1,157 +1,82 @@
 package com.example.construction_management.controller;
 
-
 import com.example.construction_management.dto.ApiResponse;
-
-import com.example.construction_management.dto.request.SalaryCreateRequest;
-import com.example.construction_management.dto.request.SalaryUpdateRequest;
+import com.example.construction_management.dto.request.SalaryRequest;
 import com.example.construction_management.dto.response.SalaryResponse;
-import com.example.construction_management.dto.response.SalaryStatisticsResponse;
-import com.example.construction_management.dto.response.SalarySummaryResponse;
 import com.example.construction_management.service.SalaryService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/**
- * REST Controller cho Salary
- */
 @RestController
-@RequestMapping("/api/salaries")
+@RequestMapping("/salaries")
 @RequiredArgsConstructor
+@Tag(name = "Salary Management", description = "Quản lý bảng lương")
+@PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT')")
 public class SalaryController {
 
     private final SalaryService salaryService;
 
-    /**
-     * Lấy tất cả bảng lương
-     * GET /api/salaries
-     */
     @GetMapping
-    @ResponseStatus(HttpStatus.OK)
-    public ApiResponse<List<SalarySummaryResponse>> getAllSalaries() {
-        List<SalarySummaryResponse> salaries = salaryService.getAllSalaries();
-        return ApiResponse.success(salaries, "Lấy danh sách bảng lương thành công");
+    @Operation(summary = "Lấy tất cả bảng lương")
+    public ResponseEntity<ApiResponse<List<SalaryResponse>>> getAllSalaries() {
+        return ResponseEntity.ok(ApiResponse.success(salaryService.getAllSalaries()));
     }
 
-    /**
-     * Lấy chi tiết bảng lương theo ID
-     * GET /api/salaries/{id}
-     */
     @GetMapping("/{id}")
-    @ResponseStatus(HttpStatus.OK)
-    public ApiResponse<SalaryResponse> getSalaryById(@PathVariable Long id) {
-        SalaryResponse salary = salaryService.getSalaryById(id);
-        return ApiResponse.success(salary, "Lấy thông tin bảng lương thành công");
+    @Operation(summary = "Lấy bảng lương theo ID")
+    public ResponseEntity<ApiResponse<SalaryResponse>> getSalaryById(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(salaryService.getSalaryById(id)));
     }
 
-    /**
-     * Lấy bảng lương của nhân viên
-     * GET /api/salaries/employee/{employeeId}
-     */
+    @GetMapping("/period")
+    @Operation(summary = "Lấy bảng lương theo kỳ")
+    public ResponseEntity<ApiResponse<List<SalaryResponse>>> getSalariesByPeriod(
+            @RequestParam Integer month,
+            @RequestParam Integer year) {
+        return ResponseEntity.ok(ApiResponse.success(salaryService.getSalariesByPeriod(month, year)));
+    }
+
     @GetMapping("/employee/{employeeId}")
-    @ResponseStatus(HttpStatus.OK)
-    public ApiResponse<List<SalarySummaryResponse>> getSalariesByEmployee(
+    @Operation(summary = "Lấy bảng lương theo nhân viên")
+    public ResponseEntity<ApiResponse<List<SalaryResponse>>> getSalariesByEmployee(
             @PathVariable Long employeeId) {
-        List<SalarySummaryResponse> salaries = salaryService.getSalariesByEmployee(employeeId);
-        return ApiResponse.success(salaries, "Lấy bảng lương theo nhân viên thành công");
+        return ResponseEntity.ok(ApiResponse.success(salaryService.getSalariesByEmployee(employeeId)));
     }
 
-    /**
-     * Lấy bảng lương theo tháng
-     * GET /api/salaries/month?year=2025&month=1
-     */
-    @GetMapping("/month")
-    @ResponseStatus(HttpStatus.OK)
-    public ApiResponse<List<SalarySummaryResponse>> getSalariesByMonth(
-            @RequestParam Integer year,
-            @RequestParam Integer month) {
-        List<SalarySummaryResponse> salaries = salaryService.getSalariesByMonth(year, month);
-        return ApiResponse.success(salaries, "Lấy bảng lương theo tháng thành công");
-    }
-
-    /**
-     * Lấy bảng lương chưa thanh toán
-     * GET /api/salaries/unpaid
-     */
-    @GetMapping("/unpaid")
-    @ResponseStatus(HttpStatus.OK)
-    public ApiResponse<List<SalarySummaryResponse>> getUnpaidSalaries() {
-        List<SalarySummaryResponse> salaries = salaryService.getUnpaidSalaries();
-        return ApiResponse.success(salaries, "Lấy bảng lương chưa thanh toán thành công");
-    }
-
-    /**
-     * Thống kê lương theo tháng
-     * GET /api/salaries/statistics?year=2025&month=1
-     */
-    @GetMapping("/statistics")
-    @ResponseStatus(HttpStatus.OK)
-    public ApiResponse<SalaryStatisticsResponse> getStatisticsByMonth(
-            @RequestParam Integer year,
-            @RequestParam Integer month) {
-        SalaryStatisticsResponse statistics = salaryService.getStatisticsByMonth(year, month);
-        return ApiResponse.success(statistics, "Lấy thống kê lương thành công");
-    }
-
-    /**
-     * Tạo bảng lương mới
-     * POST /api/salaries
-     */
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public ApiResponse<SalaryResponse> createSalary(
-            @Valid @RequestBody SalaryCreateRequest request) {
-        SalaryResponse salary = salaryService.createSalary(request);
-        return ApiResponse.success(salary, "Tạo bảng lương thành công");
+    @Operation(summary = "Tạo bảng lương mới")
+    public ResponseEntity<ApiResponse<SalaryResponse>> createSalary(
+            @Valid @RequestBody SalaryRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(salaryService.createSalary(request), "Tạo bảng lương thành công"));
     }
 
-    /**
-     * Cập nhật bảng lương
-     * PUT /api/salaries/{id}
-     */
     @PutMapping("/{id}")
-    @ResponseStatus(HttpStatus.OK)
-    public ApiResponse<SalaryResponse> updateSalary(
+    @Operation(summary = "Cập nhật bảng lương")
+    public ResponseEntity<ApiResponse<SalaryResponse>> updateSalary(
             @PathVariable Long id,
-            @Valid @RequestBody SalaryUpdateRequest request) {
-        SalaryResponse salary = salaryService.updateSalary(id, request);
-        return ApiResponse.success(salary, "Cập nhật bảng lương thành công");
+            @Valid @RequestBody SalaryRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(salaryService.updateSalary(id, request), "Cập nhật thành công"));
     }
 
-    /**
-     * Đánh dấu đã thanh toán
-     * POST /api/salaries/{id}/pay
-     */
-    @PostMapping("/{id}/pay")
-    @ResponseStatus(HttpStatus.OK)
-    public ApiResponse<SalaryResponse> markAsPaid(@PathVariable Long id) {
-        SalaryResponse salary = salaryService.markAsPaid(id);
-        return ApiResponse.success(salary, "Đánh dấu đã thanh toán thành công");
+    @PatchMapping("/{id}/pay")
+    @Operation(summary = "Đánh dấu đã trả lương")
+    public ResponseEntity<ApiResponse<SalaryResponse>> markAsPaid(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(salaryService.markAsPaid(id), "Đã đánh dấu trả lương"));
     }
 
-    /**
-     * Hủy thanh toán
-     * POST /api/salaries/{id}/unpay
-     */
-    @PostMapping("/{id}/unpay")
-    @ResponseStatus(HttpStatus.OK)
-    public ApiResponse<SalaryResponse> markAsUnpaid(@PathVariable Long id) {
-        SalaryResponse salary = salaryService.markAsUnpaid(id);
-        return ApiResponse.success(salary, "Hủy thanh toán thành công");
-    }
-
-    /**
-     * Xóa bảng lương (chỉ khi chưa thanh toán)
-     * DELETE /api/salaries/{id}
-     */
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.OK)
-    public ApiResponse<Void> deleteSalary(@PathVariable Long id) {
+    @Operation(summary = "Xóa bảng lương")
+    public ResponseEntity<ApiResponse<Void>> deleteSalary(@PathVariable Long id) {
         salaryService.deleteSalary(id);
-        return ApiResponse.success("Xóa bảng lương thành công");
+        return ResponseEntity.ok(ApiResponse.success(null, "Đã xóa bảng lương"));
     }
 }

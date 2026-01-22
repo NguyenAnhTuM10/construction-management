@@ -13,56 +13,36 @@ import java.util.Optional;
 @Repository
 public interface SalaryRepository extends JpaRepository<Salary, Long> {
 
-    /**
-     * Tìm lương của nhân viên trong tháng cụ thể
-     */
-    Optional<Salary> findByEmployeeIdAndYearAndMonth(Long employeeId, Integer year, Integer month);
+    // Tìm theo kỳ lương
+    List<Salary> findByMonthAndYear(Integer month, Integer year);
 
-    /**
-     * Tìm tất cả lương của nhân viên
-     */
+    // Tìm theo nhân viên
     List<Salary> findByEmployeeId(Long employeeId);
 
-    /**
-     * Tìm lương theo tháng
-     */
-    List<Salary> findByYearAndMonth(Integer year, Integer month);
+    // Tìm theo nhân viên và kỳ lương
+    Optional<Salary> findByEmployeeIdAndMonthAndYear(Long employeeId, Integer month, Integer year);
 
-    /**
-     * Tìm lương chưa thanh toán
-     */
-    List<Salary> findByIsPaid(Boolean isPaid);
+    // Kiểm tra đã có bảng lương chưa
+    boolean existsByEmployeeIdAndMonthAndYear(Long employeeId, Integer month, Integer year);
 
-    /**
-     * Tìm lương chưa thanh toán của nhân viên
-     */
-    List<Salary> findByEmployeeIdAndIsPaid(Long employeeId, Boolean isPaid);
+    // Lấy danh sách chưa trả lương
+    List<Salary> findByIsPaidFalse();
 
-    /**
-     * Kiểm tra đã tồn tại bảng lương cho nhân viên trong tháng chưa
-     */
-    boolean existsByEmployeeIdAndYearAndMonth(Long employeeId, Integer year, Integer month);
+    // Lấy danh sách đã trả lương theo kỳ
+    List<Salary> findByMonthAndYearAndIsPaidTrue(Integer month, Integer year);
 
-    /**
-     * Tính tổng lương của tháng
-     */
-    @Query("SELECT SUM(s.totalSalary) FROM Salary s WHERE s.year = :year AND s.month = :month")
-    BigDecimal sumTotalSalaryByMonth(@Param("year") Integer year, @Param("month") Integer month);
+    // Thống kê tổng lương theo kỳ
+    @Query("SELECT SUM(s.totalSalary) FROM Salary s WHERE s.month = :month AND s.year = :year")
+    BigDecimal sumTotalSalaryByPeriod(@Param("month") Integer month, @Param("year") Integer year);
 
-    /**
-     * Tính tổng lương chưa thanh toán
-     */
-    @Query("SELECT SUM(s.totalSalary) FROM Salary s WHERE s.isPaid = false")
-    BigDecimal sumUnpaidSalary();
-
-    /**
-     * Đếm số bảng lương chưa thanh toán
-     */
-
-
-
+    // ✅ Đếm số bảng lương theo trạng thái thanh toán
     long countByIsPaid(Boolean isPaid);
 
+    // ✅ Tính tổng lương theo trạng thái thanh toán (chưa trả / đã trả)
     @Query("SELECT SUM(s.totalSalary) FROM Salary s WHERE s.isPaid = :isPaid")
     BigDecimal sumTotalSalaryByIsPaid(@Param("isPaid") Boolean isPaid);
+
+    // ✅ Bonus: Tính tổng lương chưa trả (shortcut)
+    @Query("SELECT SUM(s.totalSalary) FROM Salary s WHERE s.isPaid = false")
+    BigDecimal sumUnpaidSalary();
 }
