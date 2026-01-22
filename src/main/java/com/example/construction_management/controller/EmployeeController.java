@@ -18,7 +18,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @RequestMapping("/employees")
 @Tag(name = "Employee Management", description = "Endpoints for managing employee records (Admin/Manager only)")
-@PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')") // Bảo vệ toàn bộ Controller
+//@PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')") // Bảo vệ toàn bộ Controller
 public class EmployeeController {
 
     private final EmployeeService employeeService;
@@ -56,15 +56,15 @@ public class EmployeeController {
                 .body(ApiResponse.success(newEmployee, "Employee created successfully"));
     }
 
-//    // PUT /employees/{id}
-//    @PutMapping("/{employeeId}")
-//    public ResponseEntity<ApiResponse<EmployeeResponse>> updateEmployee(
-//            @PathVariable Long employeeId,
-//            @Valid @RequestBody EmployeeRequest request) {
-//
-//        EmployeeResponse updatedEmployee = employeeService.updateEmployee(employeeId, request);
-//        return ResponseEntity.ok(ApiResponse.success(updatedEmployee, "Employee updated successfully"));
-//    }
+    // PUT /employees/{id}
+    @PutMapping("/{employeeId}")
+    public ResponseEntity<ApiResponse<EmployeeResponse>> updateEmployee(
+            @PathVariable Long employeeId,
+            @Valid @RequestBody EmployeeRequest request) {
+
+        EmployeeResponse updatedEmployee = employeeService.updateEmployee(employeeId, request);
+        return ResponseEntity.ok(ApiResponse.success(updatedEmployee, "Employee updated successfully"));
+    }
 
     // DELETE /employees/{id}
     @DeleteMapping("/{employeeId}")

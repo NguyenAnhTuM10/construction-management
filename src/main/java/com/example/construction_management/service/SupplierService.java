@@ -8,6 +8,7 @@ import com.example.construction_management.exception.BusinessException;
 import com.example.construction_management.exception.ErrorCode;
 import com.example.construction_management.repository.SupplierRepository;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,12 +34,19 @@ public class SupplierService {
 
     @Transactional
     public SupplierResponse createSupplier(SupplierRequest request) {
-        if (supplierRepository.existsByCode(request.getCode())) {
+        // Nếu FE không gửi code, tự sinh
+        String code = request.getCode();
+        if (code == null || code.trim().isEmpty()) {
+            code = generateRandomSupplierCode();
+        }
+
+        // Kiểm tra trùng mã
+        if (supplierRepository.existsByCode(code)) {
             throw new IllegalArgumentException("Mã nhà cung cấp đã tồn tại");
         }
 
         Supplier supplier = Supplier.builder()
-                .code(request.getCode())
+                .code(code)
                 .name(request.getName())
                 .phone(request.getPhone())
                 .address(request.getAddress())
@@ -48,6 +56,13 @@ public class SupplierService {
 
         return toResponse(supplierRepository.save(supplier));
     }
+
+    private String generateRandomSupplierCode() {
+        // Tạo chuỗi 6 ký tự ngẫu nhiên (chữ và số)
+        String randomPart = RandomStringUtils.randomAlphanumeric(6).toUpperCase();
+        return "SUP-" + randomPart;
+    }
+
 
     @Transactional
     public SupplierResponse updateSupplier(Long id, SupplierRequest request) {

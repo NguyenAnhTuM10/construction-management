@@ -46,7 +46,11 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         // PUBLIC ENDPOINTS
-                        .requestMatchers("/construction/auth/**", "/auth/**", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
+                        .requestMatchers("/construction/auth/**", "/auth/**", "/v3/api-docs/**", "/swagger-ui/**")
+                        .permitAll()
+
+                        .requestMatchers("/salaries/**").hasAnyRole("ADMIN", "ACCOUNTANT")
+
 
                         // ADMIN
                         .requestMatchers("/admin/**").hasRole("ADMIN")
@@ -56,6 +60,7 @@ public class SecurityConfig {
 
                         // ACCOUNTANT
                         .requestMatchers("/accountant/**").hasAnyRole("ADMIN", "ACCOUNTANT")
+
 
                         // ALL OTHERS
                         .anyRequest().authenticated()

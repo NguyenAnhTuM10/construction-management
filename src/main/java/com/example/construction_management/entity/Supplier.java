@@ -15,7 +15,7 @@ public class Supplier {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 50)
+    @Column( unique = true, length = 50)
     private String code; // NCC001
 
     @Column(nullable = false, length = 200)

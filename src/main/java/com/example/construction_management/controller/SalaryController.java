@@ -19,7 +19,7 @@ import java.util.List;
 @RequestMapping("/salaries")
 @RequiredArgsConstructor
 @Tag(name = "Salary Management", description = "Quản lý bảng lương")
-@PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT')")
+//@PreAuthorize("hasAnyRole('ADMIN', 'ACCOUNTANT')")
 public class SalaryController {
 
     private final SalaryService salaryService;

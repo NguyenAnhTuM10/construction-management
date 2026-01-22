@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -93,6 +94,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         } catch (Exception ex) {
             logger.error("Could not set user authentication in security context", ex);
             ex.printStackTrace();
+        }
+
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        if (auth != null && auth.isAuthenticated()) {
+            System.out.println("🔐 User authenticated: " + auth.getName());
+            System.out.println("🎭 Roles: " + auth.getAuthorities());
+        } else {
+            System.out.println("🚫 No authenticated user for: " + request.getRequestURI());
         }
 
         // ✅ LUÔN cho request đi tiếp (SecurityConfig sẽ quyết định allow/deny)

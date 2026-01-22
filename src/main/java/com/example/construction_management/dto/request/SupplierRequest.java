@@ -7,8 +7,8 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SupplierRequest {
-    @NotBlank(message = "Mã nhà cung cấp không được để trống")
-    @Size(max = 50)
+
+
     private String code;
 
     @NotBlank(message = "Tên nhà cung cấp không được để trống")
