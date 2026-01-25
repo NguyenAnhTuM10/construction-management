@@ -65,27 +65,38 @@ public class PaymentService {
     public PaymentResponse createPayment(PaymentRequest request) {
         // 1. Validate order exists
         Order order = orderRepository.findById(request.getOrderId())
-                .orElseThrow(() -> new  BusinessException(ErrorCode.ORDER_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+
+        // ✅ FIX: Tính remainingDebt an toàn, xử lý null
+        BigDecimal remainingDebt = calculateRemainingDebt(order);
 
         // 2. Validate payment amount
-        if (request.getAmount().compareTo(order.getRemainingDebt()) > 0) {
+        if (request.getAmount() == null) {
+            throw new IllegalArgumentException("Số tiền thanh toán không được để trống");
+        }
+
+        if (request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Số tiền thanh toán phải lớn hơn 0");
+        }
+
+        if (request.getAmount().compareTo(remainingDebt) > 0) {
             throw new IllegalArgumentException(
                     String.format("Số tiền thanh toán (%s) vượt quá công nợ còn lại (%s)",
-                            request.getAmount(), order.getRemainingDebt())
+                            request.getAmount(), remainingDebt)
             );
         }
 
         // 3. Get current user
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new  BusinessException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 4. Create payment
         Payment payment = Payment.builder()
                 .order(order)
                 .customer(order.getCustomer())
                 .amount(request.getAmount())
-                .paymentDate(request.getPaymentDate())
+                .paymentDate(request.getPaymentDate() != null ? request.getPaymentDate() : LocalDateTime.now())
                 .paymentMethod(PaymentMethod.valueOf(request.getPaymentMethod()))
                 .reference(request.getReference())
                 .note(request.getNote())
@@ -117,18 +128,54 @@ public class PaymentService {
         paymentRepository.deleteById(id);
     }
 
-    // Helper methods
+    // ==================== HELPER METHODS ====================
+
     private Payment findPaymentById(Long id) {
         return paymentRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_EXITS));
     }
 
+    /**
+     * ✅ FIX: Tính remainingDebt an toàn, xử lý trường hợp null
+     */
+    private BigDecimal calculateRemainingDebt(Order order) {
+        // Nếu remainingDebt đã có giá trị, sử dụng nó
+        if (order.getRemainingDebt() != null) {
+            return order.getRemainingDebt();
+        }
+
+        // Nếu null, tính từ total - paidAmount
+        BigDecimal total = order.getTotal() != null ? order.getTotal() : BigDecimal.ZERO;
+        BigDecimal paidAmount = order.getPaidAmount() != null ? order.getPaidAmount() : BigDecimal.ZERO;
+
+        return total.subtract(paidAmount);
+    }
+
+    /**
+     * ✅ FIX: Update order payment info với null-safe
+     */
     private void updateOrderPaymentInfo(Order order, BigDecimal paymentAmount) {
+        // Ensure paidAmount is not null
+        BigDecimal currentPaidAmount = order.getPaidAmount() != null
+                ? order.getPaidAmount()
+                : BigDecimal.ZERO;
+
+        // Ensure total is not null
+        BigDecimal total = order.getTotal() != null
+                ? order.getTotal()
+                : BigDecimal.ZERO;
+
         // Update paid amount
-        order.setPaidAmount(order.getPaidAmount().add(paymentAmount));
+        BigDecimal newPaidAmount = currentPaidAmount.add(paymentAmount);
+        order.setPaidAmount(newPaidAmount);
 
         // Update remaining debt
-        order.setRemainingDebt(order.getTotal().subtract(order.getPaidAmount()));
+        BigDecimal newRemainingDebt = total.subtract(newPaidAmount);
+        // Đảm bảo remainingDebt không âm
+        if (newRemainingDebt.compareTo(BigDecimal.ZERO) < 0) {
+            newRemainingDebt = BigDecimal.ZERO;
+        }
+        order.setRemainingDebt(newRemainingDebt);
 
         // Update payment status
         order.updatePaymentStatus();
@@ -136,12 +183,25 @@ public class PaymentService {
         orderRepository.save(order);
     }
 
+    /**
+     * ✅ FIX: Update customer debt với null-safe
+     */
     private void updateCustomerDebt(Customer customer, BigDecimal debtChange) {
+        if (customer == null) {
+            return;
+        }
+
         BigDecimal currentDebt = customer.getDebt() != null
                 ? customer.getDebt()
                 : BigDecimal.ZERO;
 
-        customer.setDebt(currentDebt.add(debtChange));
+        BigDecimal newDebt = currentDebt.add(debtChange);
+        // Đảm bảo debt không âm
+        if (newDebt.compareTo(BigDecimal.ZERO) < 0) {
+            newDebt = BigDecimal.ZERO;
+        }
+
+        customer.setDebt(newDebt);
         customerRepository.save(customer);
     }
 }

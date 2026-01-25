@@ -14,37 +14,40 @@ public class SalaryResponse {
 
     private Long id;
 
-    // Employee info
+    // ========== EMPLOYEE INFO ==========
     private Long employeeId;
+    private String employeeCode;      // ✅ THÊM
     private String employeeName;
     private String departmentName;
+    private String positionName;      // ✅ THÊM
 
-    // Kỳ lương
+    // ========== KỲ LƯƠNG ==========
     private Integer month;
     private Integer year;
 
-    // Ngày công
-    private Integer workDays;
-    private Integer actualWorkDays;
-    private Integer leaveDays;
-    private Double overtimeHours;
+    // ========== NGÀY CÔNG ==========
+    private Integer workDays;         // Ngày công chuẩn
+    private Integer actualWorkDays;   // Ngày công thực tế
+    private Integer leaveDays;        // Ngày nghỉ phép
+    private Double overtimeHours;     // Giờ tăng ca
 
-    // Thu nhập
-    private BigDecimal baseSalary;
-    private BigDecimal bonus;
-    private BigDecimal allowance;
-    private BigDecimal overtimePay;
+    // ========== THU NHẬP ==========
+    private BigDecimal baseSalary;    // Lương cơ bản
+    private BigDecimal bonus;         // Tổng thưởng (KPI + doanh số + khác)
+    private BigDecimal allowance;     // Tổng phụ cấp
+    private BigDecimal overtimePay;   // Lương tăng ca
 
-    // Khấu trừ
-    private BigDecimal deduction;
+    // ========== KHẤU TRỪ ==========
+    private BigDecimal deduction;     // Tổng khấu trừ (BHXH + thuế + phạt)
 
-    // Tổng
-    private BigDecimal totalSalary;
+    // ========== TỔNG ==========
+    private BigDecimal totalSalary;   // Thực lĩnh
 
-    // Trạng thái
+    // ========== TRẠNG THÁI ==========
     private Boolean isPaid;
     private LocalDate paidDate;
 
+    // ========== KHÁC ==========
     private String note;
     private LocalDateTime createdDate;
 }

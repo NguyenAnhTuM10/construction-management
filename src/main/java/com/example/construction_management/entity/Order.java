@@ -1,7 +1,5 @@
 package com.example.construction_management.entity;
 
-
-
 import com.example.construction_management.enums.OrderStatus;
 import com.example.construction_management.enums.PaymentStatus;
 import jakarta.persistence.*;
@@ -21,7 +19,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@EntityListeners(AuditingEntityListener.class) // ✅ THÊM
+@EntityListeners(AuditingEntityListener.class)
 public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,10 +34,12 @@ public class Order {
     private Employee employee;
 
     @Column(precision = 12, scale = 2)
-    private BigDecimal total = BigDecimal.ZERO;
+    @Builder.Default
+    private BigDecimal total = BigDecimal.ZERO;  // ✅ FIX: Thêm @Builder.Default
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
+    @Builder.Default
     private OrderStatus status = OrderStatus.PENDING;
 
     @CreatedDate
@@ -58,7 +58,7 @@ public class Order {
 
     @Column(precision = 15, scale = 2)
     @Builder.Default
-    private BigDecimal remainingDebt = BigDecimal.ZERO;
+    private BigDecimal remainingDebt = BigDecimal.ZERO;  // ✅ Đã có @Builder.Default
 
     @Enumerated(EnumType.STRING)
     @Builder.Default
@@ -70,21 +70,52 @@ public class Order {
 
     // ========== HELPER METHODS ==========
 
+    /**
+     * ✅ FIX: Cải thiện @PrePersist để đảm bảo remainingDebt luôn được set
+     */
     @PrePersist
     public void prePersist() {
-        if (this.remainingDebt == null) { // ✅ SỬA: bỏ điều kiện == 0
-            this.remainingDebt = this.total;
+        // Đảm bảo total không null
+        if (this.total == null) {
+            this.total = BigDecimal.ZERO;
+        }
+
+        // Đảm bảo paidAmount không null
+        if (this.paidAmount == null) {
+            this.paidAmount = BigDecimal.ZERO;
+        }
+
+        // Tính remainingDebt nếu chưa có hoặc bằng 0
+        if (this.remainingDebt == null || this.remainingDebt.compareTo(BigDecimal.ZERO) == 0) {
+            this.remainingDebt = this.total.subtract(this.paidAmount);
+        }
+
+        // Đảm bảo paymentStatus không null
+        if (this.paymentStatus == null) {
+            this.paymentStatus = PaymentStatus.UNPAID;
         }
     }
 
+    /**
+     * ✅ FIX: Cập nhật payment status với null-safe
+     */
     public void updatePaymentStatus() {
-        // Calculate remaining debt first
-        this.remainingDebt = this.total.subtract(this.paidAmount); // ✅ THÊM
+        // Ensure values are not null
+        BigDecimal currentTotal = this.total != null ? this.total : BigDecimal.ZERO;
+        BigDecimal currentPaidAmount = this.paidAmount != null ? this.paidAmount : BigDecimal.ZERO;
 
-        // Update status
-        if (paidAmount.compareTo(BigDecimal.ZERO) == 0) {
+        // Calculate remaining debt
+        this.remainingDebt = currentTotal.subtract(currentPaidAmount);
+
+        // Ensure remainingDebt is not negative
+        if (this.remainingDebt.compareTo(BigDecimal.ZERO) < 0) {
+            this.remainingDebt = BigDecimal.ZERO;
+        }
+
+        // Update status based on paid amount
+        if (currentPaidAmount.compareTo(BigDecimal.ZERO) == 0) {
             this.paymentStatus = PaymentStatus.UNPAID;
-        } else if (paidAmount.compareTo(total) >= 0) {
+        } else if (currentPaidAmount.compareTo(currentTotal) >= 0) {
             this.paymentStatus = PaymentStatus.PAID;
             this.remainingDebt = BigDecimal.ZERO;
         } else {
@@ -92,8 +123,23 @@ public class Order {
         }
     }
 
-    public void addPayment(Payment payment) { // ✅ THÊM
+    /**
+     * Thêm payment vào order
+     */
+    public void addPayment(Payment payment) {
         payments.add(payment);
         payment.setOrder(this);
+    }
+
+    /**
+     * ✅ THÊM: Helper method để lấy remainingDebt an toàn
+     */
+    public BigDecimal getRemainingDebtSafe() {
+        if (this.remainingDebt != null) {
+            return this.remainingDebt;
+        }
+        BigDecimal currentTotal = this.total != null ? this.total : BigDecimal.ZERO;
+        BigDecimal currentPaidAmount = this.paidAmount != null ? this.paidAmount : BigDecimal.ZERO;
+        return currentTotal.subtract(currentPaidAmount);
     }
 }
