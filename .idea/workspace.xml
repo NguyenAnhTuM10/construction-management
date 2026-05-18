@@ -1,0 +1,607 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="41dc4729-a033-4783-8376-c653bd00f67e" name="Changes" comment="feature/some on admin service">
+      <change beforePath="$PROJECT_DIR$/.gitattributes" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.mvn/wrapper/maven-wrapper.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvnw" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvnw.cmd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/ConstructionManagementApplication.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/config/DataInitializer.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/config/JwtConfig.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/config/OpenApiConfig.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/config/SecurityConfig.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/controller/AdminController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/controller/AuthController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/controller/CategoryController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/controller/CustomerController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/controller/DashboardController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/controller/DepartmentController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/controller/EmployeeController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/controller/InventoryBalanceController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/controller/InventorySyncController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/controller/InventoryTransactionController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/controller/OrderController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/controller/PaymentController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/controller/ProductController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/controller/ReportController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/controller/SalaryController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/controller/SupplierController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/controller/TaskController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/controller/UserController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/controller/WarehouseController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/ApiResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/CategoryDTO.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/ChangePasswordRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/CustomerCreateRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/CustomerUpdateRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/DepartmentDTO.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/DepartmentRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/EmployeeRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/InventoryTransactionItemRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/InventoryTransactionRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/LoginRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/LogoutRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/OrderCreateRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/OrderItemRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/OrderStatusUpdateRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/OrderUpdateRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/PaymentRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/ProductCreateUpdateDTO.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/ProductDTO.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/RefreshTokenRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/RegisterRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/ResetPasswordRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/RevenueReportDTO.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/SalaryCreateRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/SalaryDTO.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/SalaryRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/SalaryUpdateRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/StockReportDTO.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/StockUpdateDTO.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/SupplierRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/TaskRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/TaskResultRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/TaskStatusUpdateRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/TaskUpdateRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/UpdatePersonalDataRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/UpdateUserLockRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/UpdateUserRoleRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/request/WarehouseRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/response/CustomerResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/response/DashboardSummaryResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/response/DebtReportResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/response/EmployeeResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/response/InventoryBalanceResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/response/InventoryByWarehouseResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/response/InventoryReportResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/response/InventoryTransactionItemResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/response/InventoryTransactionResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/response/InventoryTransactionSummaryResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/response/LoginResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/response/MonthlyRevenueResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/response/OrderItemResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/response/OrderResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/response/OrderSummaryResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/response/PaymentResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/response/PaymentSummaryResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/response/RegisterResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/response/RevenueByCustomerResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/response/RevenueByEmployeeResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/response/RevenueByProductResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/response/RevenueReportResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/response/SalaryResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/response/SalaryStatisticsResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/response/SalarySummaryResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/response/SupplierResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/response/TaskResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/response/TaskSummaryResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/response/UserResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/dto/response/WarehouseResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/entity/Category.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/entity/Customer.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/entity/Department.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/entity/Employee.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/entity/InventoryAuditLog.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/entity/InventoryBalance.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/entity/InventoryTransaction.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/entity/InventoryTransactionItem.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/entity/Order.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/entity/OrderItem.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/entity/Payment.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/entity/Product.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/entity/RefreshToken.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/entity/Role.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/entity/Salary.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/entity/SalaryConfig.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/entity/Supplier.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/entity/Task.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/entity/User.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/entity/Warehouse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/enums/OrderStatus.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/enums/PaymentMethod.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/enums/PaymentStatus.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/enums/ProductType.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/enums/SalaryStatus.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/enums/TaskPriority.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/enums/TaskStatus.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/enums/TransactionReason.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/enums/TransactionStatus.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/enums/TransactionType.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/exception/BusinessException.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/exception/ErrorCode.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/exception/InvalidTokenException.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/exception/RoleNotFoundException.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/exception/UserAlreadyExistsException.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/exception/UserNotAuthenticatedException.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/exception/UserNotFoundException.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/handler/GlobalExceptionHandler.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/mapper/CategoryMapper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/mapper/CustomerMapper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/mapper/DepartmentMapper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/mapper/EmployeeMapper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/mapper/InventoryBalanceMapper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/mapper/InventoryTransactionMapper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/mapper/OrderMapper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/mapper/PaymentMapper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/mapper/ProductMapper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/mapper/SalaryMapper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/mapper/TaskMapper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/mapper/UserMapper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/mapper/WarehouseMapper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/repository/CategoryRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/repository/CustomerRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/repository/DepartmentRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/repository/EmployeeRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/repository/InventoryBalanceRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/repository/InventoryTransactionItemRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/repository/InventoryTransactionRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/repository/OrderItemRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/repository/OrderRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/repository/PaymentRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/repository/ProductRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/repository/RefreshTokenRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/repository/RoleRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/repository/SalaryConfigRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/repository/SalaryRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/repository/SupplierRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/repository/TaskRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/repository/UserRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/repository/WarehouseRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/security/CustomUserDetailsService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/security/JwtAuthenticationFilter.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/security/JwtTokenProvider.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/service/AdminService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/service/AuthService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/service/CategoryService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/service/CustomerService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/service/DashboardService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/service/DepartmentService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/service/EmployeeService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/service/InventoryBalanceService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/service/InventoryTransactionService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/service/OrderService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/service/PaymentService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/service/ProductService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/service/ReportService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/service/SalaryService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/service/SupplierService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/service/TaskService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/service/UserService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/construction_management/service/WarehouseService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/application.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/schema.sql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/example/construction_management/ConstructionManagementApplicationTests.java" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Interface" />
+        <option value="Enum" />
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;NguyenAnhTuM10&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/NguyenAnhTuM10/construction-management.git&quot;,
+    &quot;accountId&quot;: &quot;99095279-d0a1-4c52-aa8f-f2a75a8b1a67&quot;
+  }
+}</component>
+  <component name="KubernetesApiPersistence">{}</component>
+  <component name="KubernetesApiProvider">{
+  &quot;isMigrated&quot;: true
+}</component>
+  <component name="MavenImportPreferences">
+    <option name="generalSettings">
+      <MavenGeneralSettings>
+        <option name="mavenHomeTypeForPersistence" value="WRAPPER" />
+      </MavenGeneralSettings>
+    </option>
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 7
+}</component>
+  <component name="ProjectId" id="34xripQU40UoXRN3fib4X46Ve4B" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="1" id="Add" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
+    &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
+    &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
+    &quot;RequestMappingsPanelWidth1&quot;: &quot;75&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;Spring Boot.ConstructionManagementApplication.executor&quot;: &quot;Run&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/AAA/construction-management/src/main/java/com/example/construction_management/dto/request&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  }
+}</component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\AAA\construction-management\src\main\java\com\example\construction_management\dto\request" />
+      <recent name="D:\AAA\construction-management\src\main\java\com\example\construction_management\dto" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\AAA\construction-management\src\main\java\com\example\construction_management\dto\request" />
+    </key>
+    <key name="CopyClassDialog.RECENTS_KEY">
+      <recent name="com.example.construction_management.entity" />
+      <recent name="com.example.construction_management.dto.request" />
+    </key>
+  </component>
+  <component name="RunManager">
+    <configuration name="ConstructionManagementApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="construction-management" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.example.construction_management.ConstructionManagementApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9823dce3aa75-bf35d07a577b-intellij.indexing.shared.core-IU-252.25557.131" />
+        <option value="bundled-js-predefined-d6986cc7102b-b598e85cdad2-JavaScript-IU-252.25557.131" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="StructureViewState">
+    <option name="selectedTab" value="Logical" />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="41dc4729-a033-4783-8376-c653bd00f67e" name="Changes" comment="" />
+      <created>1762166193736</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1762166193736</updated>
+      <workItem from="1762166195235" duration="198000" />
+      <workItem from="1762246558164" duration="2251000" />
+      <workItem from="1762338551201" duration="399000" />
+      <workItem from="1762338976141" duration="7729000" />
+      <workItem from="1762405116595" duration="3351000" />
+      <workItem from="1762507616351" duration="8553000" />
+      <workItem from="1762516333336" duration="274000" />
+      <workItem from="1762533152134" duration="1485000" />
+      <workItem from="1762844245863" duration="36000" />
+      <workItem from="1763039911064" duration="9867000" />
+      <workItem from="1763106391521" duration="4490000" />
+      <workItem from="1763303811833" duration="5073000" />
+      <workItem from="1763389793078" duration="4755000" />
+      <workItem from="1763568248964" duration="2403000" />
+      <workItem from="1763580998982" duration="6567000" />
+      <workItem from="1763626134888" duration="8870000" />
+      <workItem from="1763648750431" duration="2856000" />
+      <workItem from="1763722522310" duration="4561000" />
+      <workItem from="1763745092154" duration="1232000" />
+      <workItem from="1763794767431" duration="3054000" />
+      <workItem from="1763909103050" duration="3154000" />
+      <workItem from="1763976973875" duration="983000" />
+      <workItem from="1764071503183" duration="6565000" />
+      <workItem from="1764142090453" duration="2928000" />
+      <workItem from="1764231875144" duration="1021000" />
+      <workItem from="1764259801232" duration="3960000" />
+      <workItem from="1764324766448" duration="2468000" />
+      <workItem from="1764341192523" duration="387000" />
+      <workItem from="1764379081058" duration="574000" />
+      <workItem from="1764407659416" duration="3220000" />
+      <workItem from="1764434537124" duration="1308000" />
+      <workItem from="1764478667171" duration="1483000" />
+      <workItem from="1764561683514" duration="2861000" />
+      <workItem from="1764569653178" duration="2812000" />
+      <workItem from="1764581713236" duration="29000" />
+      <workItem from="1764592534004" duration="2595000" />
+      <workItem from="1764645024314" duration="274000" />
+      <workItem from="1764657443321" duration="1012000" />
+      <workItem from="1764662521238" duration="6146000" />
+      <workItem from="1764823344005" duration="152000" />
+      <workItem from="1764938051464" duration="117000" />
+      <workItem from="1765000162869" duration="4918000" />
+      <workItem from="1765248611514" duration="3086000" />
+      <workItem from="1765278359025" duration="115000" />
+      <workItem from="1765356196382" duration="2300000" />
+      <workItem from="1765520011479" duration="3161000" />
+      <workItem from="1765810643019" duration="708000" />
+      <workItem from="1766132714644" duration="1332000" />
+      <workItem from="1766505537261" duration="635000" />
+      <workItem from="1766672966814" duration="772000" />
+      <workItem from="1766764727182" duration="20000" />
+      <workItem from="1766892255763" duration="2115000" />
+      <workItem from="1767008447553" duration="1322000" />
+      <workItem from="1767078197374" duration="3315000" />
+      <workItem from="1767099609969" duration="4038000" />
+      <workItem from="1767184830813" duration="1829000" />
+      <workItem from="1767187240858" duration="762000" />
+      <workItem from="1767325833208" duration="2273000" />
+      <workItem from="1767354582381" duration="3646000" />
+      <workItem from="1767438516110" duration="2954000" />
+      <workItem from="1767672992971" duration="1278000" />
+      <workItem from="1768305654403" duration="422000" />
+      <workItem from="1768367816163" duration="4486000" />
+      <workItem from="1768922496302" duration="1164000" />
+      <workItem from="1768985413452" duration="8240000" />
+      <workItem from="1769011501513" duration="12553000" />
+      <workItem from="1769052552141" duration="10578000" />
+      <workItem from="1769079373694" duration="9772000" />
+      <workItem from="1769105555113" duration="4666000" />
+      <workItem from="1769139306613" duration="657000" />
+      <workItem from="1769314395796" duration="685000" />
+      <workItem from="1769331648149" duration="5404000" />
+      <workItem from="1769482486716" duration="220000" />
+      <workItem from="1769614437783" duration="1430000" />
+      <workItem from="1772439888443" duration="767000" />
+      <workItem from="1775645440227" duration="1327000" />
+      <workItem from="1776071821498" duration="389000" />
+      <workItem from="1776072246533" duration="175000" />
+      <workItem from="1776072446908" duration="202000" />
+      <workItem from="1776072686425" duration="131000" />
+      <workItem from="1776078374787" duration="111000" />
+      <workItem from="1776078534205" duration="857000" />
+      <workItem from="1776091469039" duration="9000" />
+      <workItem from="1776094946217" duration="1677000" />
+      <workItem from="1776139900527" duration="593000" />
+      <workItem from="1776319224161" duration="1573000" />
+      <workItem from="1777120335441" duration="696000" />
+      <workItem from="1777317454556" duration="987000" />
+      <workItem from="1777972054278" duration="2761000" />
+      <workItem from="1778562889418" duration="1663000" />
+      <workItem from="1778679583844" duration="594000" />
+      <workItem from="1778848544213" duration="1653000" />
+      <workItem from="1779018319931" duration="1284000" />
+      <workItem from="1779033851279" duration="602000" />
+      <workItem from="1779122822184" duration="719000" />
+      <workItem from="1779123590982" duration="2838000" />
+    </task>
+    <task id="LOCAL-00001" summary="Authenticate and authorize feature">
+      <option name="closed" value="true" />
+      <created>1762347693205</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1762347693205</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Authenticate and authorize feature">
+      <option name="closed" value="true" />
+      <created>1762347749121</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1762347749121</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Authenticate and authorize feature">
+      <option name="closed" value="true" />
+      <created>1762347797997</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1762347797997</updated>
+    </task>
+    <task id="LOCAL-00004" summary="refactor Authentication Service">
+      <option name="closed" value="true" />
+      <created>1762516061495</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1762516061495</updated>
+    </task>
+    <task id="LOCAL-00005" summary="refactor Authentication Service">
+      <option name="closed" value="true" />
+      <created>1762516076396</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1762516076396</updated>
+    </task>
+    <task id="LOCAL-00006" summary="refresh Token">
+      <option name="closed" value="true" />
+      <created>1763106475001</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1763106475002</updated>
+    </task>
+    <task id="LOCAL-00007" summary="DTO files">
+      <option name="closed" value="true" />
+      <created>1763310242944</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1763310242944</updated>
+    </task>
+    <task id="LOCAL-00008" summary="Add Basic payment API and base repository">
+      <option name="closed" value="true" />
+      <created>1763392360875</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1763392360875</updated>
+    </task>
+    <task id="LOCAL-00009" summary="ADMIN  feature/ update_ROLE&#10;and &#10;mapper">
+      <option name="closed" value="true" />
+      <created>1763630316282</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1763630316282</updated>
+    </task>
+    <task id="LOCAL-00010" summary="refactor exception handler">
+      <option name="closed" value="true" />
+      <created>1763634403504</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1763634403504</updated>
+    </task>
+    <task id="LOCAL-00011" summary="Base Product Service">
+      <option name="closed" value="true" />
+      <created>1764078586186</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1764078586186</updated>
+    </task>
+    <task id="LOCAL-00012" summary="feature/order base">
+      <option name="closed" value="true" />
+      <created>1764263057437</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1764263057437</updated>
+    </task>
+    <task id="LOCAL-00013" summary="feature/salary base">
+      <option name="closed" value="true" />
+      <created>1764341241875</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1764341241875</updated>
+    </task>
+    <task id="LOCAL-00014" summary="feature/ base entity for inventory management">
+      <option name="closed" value="true" />
+      <created>1764657824366</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1764657824366</updated>
+    </task>
+    <task id="LOCAL-00015" summary="feature/ service inventory_management API">
+      <option name="closed" value="true" />
+      <created>1764665984124</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1764665984124</updated>
+    </task>
+    <task id="LOCAL-00016" summary="refactor/ errorcode">
+      <option name="closed" value="true" />
+      <created>1764666018737</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1764666018737</updated>
+    </task>
+    <task id="LOCAL-00017" summary="Dashboard and Payment">
+      <option name="closed" value="true" />
+      <created>1765356981824</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1765356981824</updated>
+    </task>
+    <task id="LOCAL-00018" summary="feature/some on admin service">
+      <option name="closed" value="true" />
+      <created>1767185994232</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1767185994232</updated>
+    </task>
+    <option name="localTasksCounter" value="19" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Authenticate and authorize feature" />
+    <MESSAGE value="refactor Authentication Service" />
+    <MESSAGE value="refresh Token" />
+    <MESSAGE value="DTO files" />
+    <MESSAGE value="Add Basic payment API and base repository" />
+    <MESSAGE value="Basic Salary API" />
+    <MESSAGE value="ADMIN  feature/ update_ROLE&#10;and &#10;mapper" />
+    <MESSAGE value="refactor exception handler" />
+    <MESSAGE value="refactor employeeService" />
+    <MESSAGE value="Base Product Service" />
+    <MESSAGE value="feature/order base" />
+    <MESSAGE value="feature/salary base" />
+    <MESSAGE value="feature/ base entity for inventory management" />
+    <MESSAGE value="feature/ service inventory_management API" />
+    <MESSAGE value="refactor/ errorcode" />
+    <MESSAGE value="Dashboard and Payment" />
+    <MESSAGE value="feature/some on admin service" />
+    <option name="LAST_COMMIT_MESSAGE" value="feature/some on admin service" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <breakpoint enabled="true" type="java-exception">
+          <properties class="com.example.construction_management.exception.RoleNotFoundException" package="com.example.construction_management.exception" />
+          <option name="timeStamp" value="1" />
+        </breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+</project>

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path . -Force)",
+      "Bash(Select-Object Name, Mode)",
+      "Bash(xargs grep -l \"@PrePersist\\\\|@PreUpdate\\\\|@PostLoad\\\\|@PostPersist\")"
+    ]
+  }
+}
