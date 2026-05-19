@@ -5,8 +5,11 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.servers.Server;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.List;
 
 @Configuration
 public class OpenApiConfig {
@@ -14,6 +17,14 @@ public class OpenApiConfig {
     @Bean
     public OpenAPI constructionManagementOpenAPI() {
         return new OpenAPI()
+                .servers(List.of(
+                        new Server()
+                                .url("https://construction-management-production-2769.up.railway.app/construction")
+                                .description("Production"),
+                        new Server()
+                                .url("http://localhost:8080/construction")
+                                .description("Local")
+                ))
                 .info(new Info()
                         .title("Construction Management API")
                         .version("v1.0")

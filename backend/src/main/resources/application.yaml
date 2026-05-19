@@ -50,7 +50,7 @@ springdoc:
     urls:
       - name: Construction Management
         url: /construction/v3/api-docs
-  server-url: https://construction-management-production-2769.up.railway.app/construction
+
 
 
 
