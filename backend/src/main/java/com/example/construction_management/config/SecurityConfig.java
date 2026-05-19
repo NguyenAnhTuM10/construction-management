@@ -46,8 +46,14 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         // PUBLIC ENDPOINTS
-                        .requestMatchers("/construction/auth/**", "/auth/**", "/v3/api-docs/**", "/swagger-ui/**")
-                        .permitAll()
+                        .requestMatchers(
+                                "/construction/auth/**",
+                                "/auth/**",
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/webjars/**"
+                        ).permitAll()
 
                         .requestMatchers("/salaries/**").hasAnyRole("ADMIN", "ACCOUNTANT")
 

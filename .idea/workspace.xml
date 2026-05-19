@@ -6,6 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="41dc4729-a033-4783-8376-c653bd00f67e" name="Changes" comment="feature/some on admin service">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/example/construction_management/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/example/construction_management/config/SecurityConfig.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -75,7 +76,7 @@
     &quot;git-widget-placeholder&quot;: &quot;main&quot;,
     &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
     &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/AAA/construction-management/src/main/java/com/example/construction_management/dto/request&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/AAA/construction-management&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
@@ -220,7 +221,10 @@
       <workItem from="1779018319931" duration="1284000" />
       <workItem from="1779033851279" duration="602000" />
       <workItem from="1779122822184" duration="719000" />
-      <workItem from="1779123590982" duration="3701000" />
+      <workItem from="1779123590982" duration="3733000" />
+      <workItem from="1779171859645" duration="835000" />
+      <workItem from="1779172717887" duration="1060000" />
+      <workItem from="1779181530028" duration="8231000" />
     </task>
     <task id="LOCAL-00001" summary="Authenticate and authorize feature">
       <option name="closed" value="true" />
