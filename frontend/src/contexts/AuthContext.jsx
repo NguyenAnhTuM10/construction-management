@@ -25,14 +25,14 @@ export const AuthProvider = ({ children }) => {
     const initAuth = async () => {
       const token = getAccessToken();
       const storedUser = getUser();
-      
+
       if (token && storedUser) {
         // Có token trong storage - verify với server
         try {
           const response = await authApi.getMyInfo();
           // API trả về ApiResponse<UserResponse>
           const userData = response.data?.data || response.data;
-          
+
           setUser({
             ...storedUser,
             ...userData
@@ -40,17 +40,28 @@ export const AuthProvider = ({ children }) => {
           setIsAuthenticated(true);
         } catch (error) {
           console.error('Token validation failed:', error);
-          // Token không hợp lệ, clear auth
-          clearAuthData();
+          // Token không hợp lệ - axiosClient đã xử lý clear & dispatch event
           setUser(null);
           setIsAuthenticated(false);
         }
       }
-      
+
       setLoading(false);
     };
 
     initAuth();
+  }, []);
+
+  // Lắng nghe sự kiện session hết hạn từ axiosClient (thay thế window.location.href)
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      setUser(null);
+      setIsAuthenticated(false);
+      setLoading(false);
+    };
+
+    window.addEventListener('auth:sessionExpired', handleSessionExpired);
+    return () => window.removeEventListener('auth:sessionExpired', handleSessionExpired);
   }, []);
 
   // Login function

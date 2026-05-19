@@ -1,13 +1,13 @@
 spring:
   jwt:
-    secret: "mySecretKeyForJWTTokenGenerationAndValidation12345678901234567890"
-    access-token-expiration: 86400000        # 24 giờ (tính bằng milliseconds)
-    refresh-token-expiration: 604800000      # 7 ngày (tính bằng milliseconds)
+    secret: ${JWT_SECRET:mySecretKeyForJWTTokenGenerationAndValidation12345678901234567890}
+    access-token-expiration: 86400000
+    refresh-token-expiration: 604800000
 
   datasource:
-    url: jdbc:mysql://mysql:3306/construction_db?useSSL=true&serverTimezone=UTC
-    username: root
-    password: 1234
+    url: jdbc:mysql://${MYSQLHOST:mysql}:${MYSQLPORT:3306}/${MYSQLDATABASE:construction_db}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: ${MYSQLUSER:root}
+    password: ${MYSQLPASSWORD:1234}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
 
@@ -37,8 +37,8 @@ server:
 logging:
   level:
     root: INFO
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.hibernate.SQL: ${HIBERNATE_SQL_LOG:INFO}
+    org.hibernate.type.descriptor.sql.BasicBinder: ${HIBERNATE_BINDER_LOG:WARN}
 
 springdoc:
   api-docs:

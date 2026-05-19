@@ -91,35 +91,40 @@ axiosClient.interceptors.response.use(
       isRefreshing = true;
       
       const refreshToken = getRefreshToken();
-      
+
       if (refreshToken) {
+        // Lưu lại refresh token hiện tại để kiểm tra sau (tránh race condition với login đồng thời)
+        const capturedRefreshToken = refreshToken;
+
         try {
           // Gọi API refresh token
           const response = await axios.post(`${API_URL}/auth/refresh`, {
             refreshToken: refreshToken
           });
-          
+
           const { accessToken, refreshToken: newRefreshToken } = response.data.data;
-          
+
           // Lưu tokens mới
           setTokens(accessToken, newRefreshToken);
-          
+
           // Cập nhật header và xử lý queue
           axiosClient.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
           processQueue(null, accessToken);
-          
+
           // Retry request ban đầu
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
           return axiosClient(originalRequest);
-          
+
         } catch (refreshError) {
-          // Refresh token thất bại - logout user
           processQueue(refreshError, null);
-          clearAuthData();
-          
-          // Redirect to login
-          window.location.href = '/login';
-          
+
+          // Chỉ clear data nếu refresh token chưa bị thay thế bởi login đồng thời
+          // (tránh xóa token mới khi user login trong lúc refresh token cũ đang chạy)
+          if (getRefreshToken() === capturedRefreshToken) {
+            clearAuthData();
+            window.dispatchEvent(new CustomEvent('auth:sessionExpired'));
+          }
+
           return Promise.reject(refreshError);
         } finally {
           isRefreshing = false;
@@ -127,7 +132,7 @@ axiosClient.interceptors.response.use(
       } else {
         // Không có refresh token - logout
         clearAuthData();
-        window.location.href = '/login';
+        window.dispatchEvent(new CustomEvent('auth:sessionExpired'));
       }
     }
     
