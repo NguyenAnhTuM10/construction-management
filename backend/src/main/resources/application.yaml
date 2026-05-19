@@ -5,9 +5,9 @@ spring:
     refresh-token-expiration: 604800000
 
   datasource:
-    url: jdbc:mysql://${MYSQLHOST:mysql}:${MYSQLPORT:3306}/${MYSQLDATABASE:construction_db}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-    username: ${MYSQLUSER:root}
-    password: ${MYSQLPASSWORD:1234}
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://mysql:3306/construction_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:1234}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
 
