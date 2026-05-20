@@ -16,7 +16,8 @@ import {
   BarChartOutlined,
   HomeOutlined,
   SettingOutlined,
-  UsergroupAddOutlined
+  UsergroupAddOutlined,
+  RobotOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../../hooks/useAuth';
 import { ROLES } from '../../utils/constants';
@@ -89,6 +90,11 @@ const Sidebar = ({ collapsed, onCollapse }) => {
           {
             key: 'transactions',
             label: 'Giao dịch kho',
+          },
+          {
+            key: 'forecast',
+            icon: <RobotOutlined style={{ color: '#722ed1' }} />,
+            label: 'Dự Báo AI',
           },
         ],
       },

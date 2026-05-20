@@ -15,3 +15,4 @@ export { default as taskApi } from './taskApi';
 export { default as reportApi } from './reportApi';
 export { default as departmentApi } from './departmentApi';
 export { inventoryBalanceApi, inventoryTransactionApi } from './inventoryApi';
+export { default as forecastApi } from './forecastApi';

@@ -58,6 +58,8 @@ public class SecurityConfig {
 
                         .requestMatchers("/salaries/**").hasAnyRole("ADMIN", "ACCOUNTANT")
 
+                        // FORECAST — trigger chỉ ADMIN, xem thì tất cả authenticated
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/forecast/trigger").hasRole("ADMIN")
 
                         // ADMIN
                         .requestMatchers("/admin/**").hasRole("ADMIN")

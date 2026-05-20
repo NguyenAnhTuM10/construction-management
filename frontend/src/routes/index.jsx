@@ -24,6 +24,7 @@ import { ReportList, RevenueReport, DebtReport, StockReport, KPIReport } from '.
 import NotFound from '../pages/NotFound';
 import Unauthorized from '../pages/Unauthorized';
 import { TaskList, MyTaskList } from '../pages/tasks';
+import { ForecastDashboard } from '../pages/forecast';
 
 
 // Placeholder components cho các pages chưa implement
@@ -129,6 +130,16 @@ const router = createBrowserRouter([
         )
       },
       
+      // AI Forecast - Admin only
+      {
+        path: 'forecast',
+        element: (
+          <PrivateRoute allowedRoles={[ROLES.ADMIN]}>
+            <ForecastDashboard />
+          </PrivateRoute>
+        )
+      },
+
       // Suppliers - Admin only
       {
         path: 'suppliers',
