@@ -1,5 +1,4 @@
 import json
-from pydantic import field_validator
 from pydantic_settings import BaseSettings
 from typing import List
 
@@ -7,7 +6,7 @@ from typing import List
 class Settings(BaseSettings):
     APP_NAME: str = "AI Forecast Service"
     DEBUG: bool = False
-    ALLOWED_ORIGINS: List[str] = ["*"]
+    ALLOWED_ORIGINS: str = "*"
 
     # Inventory calculation defaults
     DEFAULT_LEAD_TIME_DAYS: int = 3
@@ -17,15 +16,14 @@ class Settings(BaseSettings):
 
     model_config = {"env_file": ".env"}
 
-    @field_validator("ALLOWED_ORIGINS", mode="before")
-    @classmethod
-    def parse_origins(cls, v):
-        if isinstance(v, str):
+    def get_allowed_origins(self) -> List[str]:
+        v = self.ALLOWED_ORIGINS.strip()
+        if v.startswith("["):
             try:
                 return json.loads(v)
             except json.JSONDecodeError:
-                return [origin.strip() for origin in v.split(",")]
-        return v
+                pass
+        return [o.strip() for o in v.split(",")]
 
 
 settings = Settings()
