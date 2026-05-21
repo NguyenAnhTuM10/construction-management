@@ -1,3 +1,5 @@
+import json
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 from typing import List
 
@@ -14,6 +16,16 @@ class Settings(BaseSettings):
     FORECAST_HORIZON_DAYS: int = 7
 
     model_config = {"env_file": ".env"}
+
+    @field_validator("ALLOWED_ORIGINS", mode="before")
+    @classmethod
+    def parse_origins(cls, v):
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except json.JSONDecodeError:
+                return [origin.strip() for origin in v.split(",")]
+        return v
 
 
 settings = Settings()
