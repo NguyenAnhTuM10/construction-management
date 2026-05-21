@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from datetime import date, datetime
-from typing import List
+from typing import List, Optional
 from enum import Enum
 
 
@@ -26,6 +26,7 @@ class ProductForecastInput(BaseModel):
     ordering_cost: float = 100000.0
     holding_cost_per_unit: float = 500.0
     daily_history: List[DailyData] = []
+    preferred_model: Optional[str] = None  # Feature 2: gợi ý model từ lịch sử accuracy
 
 
 class ForecastRequest(BaseModel):

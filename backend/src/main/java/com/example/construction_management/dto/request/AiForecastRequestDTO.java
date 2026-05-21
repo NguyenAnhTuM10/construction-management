@@ -58,6 +58,10 @@ public class AiForecastRequestDTO {
         @JsonProperty("daily_history")
         @Builder.Default
         private List<DailyData> dailyHistory = new ArrayList<>();
+
+        // Feature 2: model tốt nhất từ lịch sử accuracy — null nếu chưa có đủ dữ liệu
+        @JsonProperty("preferred_model")
+        private String preferredModel;
     }
 
     @Data

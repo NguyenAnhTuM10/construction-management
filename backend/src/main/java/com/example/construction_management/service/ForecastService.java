@@ -103,7 +103,6 @@ public class ForecastService {
 
         Product product = productOpt.get();
 
-        // Native query trả về Object[]{java.sql.Date, Long}
         List<Object[]> rawRows = transactionItemRepository.findDailyOutQuantityByProduct(productId, since);
 
         List<AiForecastRequestDTO.DailyData> dailyHistory = rawRows.stream()
@@ -120,7 +119,17 @@ public class ForecastService {
                 .unit(product.getUnit() != null ? product.getUnit() : "unit")
                 .currentStock(product.getStock() != null ? product.getStock() : 0)
                 .dailyHistory(dailyHistory)
+                .preferredModel(getBestModelForProduct(productId))
                 .build();
+    }
+
+    // Feature 2: chọn model có MAPE thấp nhất trong lịch sử (cần >= 3 mẫu đánh giá)
+    private String getBestModelForProduct(Long productId) {
+        List<Object[]> rows = forecastPredictionRepository.findModelAccuracyByProduct(productId);
+        if (rows.isEmpty()) return null;
+        Object[] best = rows.get(0);
+        long sampleCount = ((Number) best[2]).longValue();
+        return sampleCount >= 3 ? (String) best[0] : null;
     }
 
     private ForecastPrediction mapResultToEntity(AiForecastResponseDTO.ProductForecastResult result, LocalDate forecastDate) {
@@ -186,6 +195,9 @@ public class ForecastService {
                 .modelUsed(fp.getModelUsed())
                 .dailyForecast(dailyForecast)
                 .createdAt(fp.getCreatedAt())
+                .actualDemand7Days(fp.getActualDemand7Days())
+                .mape(fp.getMape())
+                .mae(fp.getMae())
                 .build();
     }
 }

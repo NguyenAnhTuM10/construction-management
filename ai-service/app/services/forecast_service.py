@@ -53,15 +53,10 @@ def forecast_product(product: ProductForecastInput, horizon: int) -> ProductFore
     demand_series = df["quantity_out"].values.astype(float)
     n = len(demand_series)
 
-    # ── Chọn model theo số ngày dữ liệu ──────────────────────────────────────
-    if n >= 60:
-        daily_preds, model_name = _forecast_xgboost(df, horizon)
-    elif n >= 14:
-        daily_preds, model_name = _forecast_holt_winters(demand_series, horizon)
-    elif n >= 7:
-        daily_preds, model_name = _forecast_linear_regression(demand_series, horizon)
-    else:
-        daily_preds, model_name = _forecast_sma(demand_series, horizon)
+    # ── Chọn model: ưu tiên preferred_model từ lịch sử accuracy ─────────────
+    daily_preds, model_name = _select_and_run_model(
+        df, demand_series, n, horizon, product.preferred_model
+    )
 
     daily_preds = [max(0, int(round(p))) for p in daily_preds]
 
@@ -94,6 +89,47 @@ def forecast_product(product: ProductForecastInput, horizon: int) -> ProductFore
         daily_forecast=daily_preds,
         model_used=model_name,
     )
+
+
+# ═══════════════════════ Model Selection ════════════════════════════════════
+
+# Số ngày tối thiểu mỗi model cần để chạy được
+_MODEL_MIN_DAYS = {
+    "xgboost": 60,
+    "holt_winters": 14,
+    "linear_regression": 7,
+    "simple_moving_average": 0,
+}
+
+
+def _select_and_run_model(
+    df, demand_series: np.ndarray, n: int, horizon: int, preferred_model: str | None
+) -> Tuple[List[float], str]:
+    """
+    Dùng preferred_model nếu có đủ dữ liệu.
+    Fallback về logic chọn theo số ngày nếu không có hoặc không đủ data.
+    """
+    if preferred_model and preferred_model in _MODEL_MIN_DAYS:
+        min_days = _MODEL_MIN_DAYS[preferred_model]
+        if n >= min_days:
+            if preferred_model == "xgboost":
+                return _forecast_xgboost(df, horizon)
+            elif preferred_model == "holt_winters":
+                return _forecast_holt_winters(demand_series, horizon)
+            elif preferred_model == "linear_regression":
+                return _forecast_linear_regression(demand_series, horizon)
+            else:
+                return _forecast_sma(demand_series, horizon)
+
+    # Default: chọn theo lượng data
+    if n >= 60:
+        return _forecast_xgboost(df, horizon)
+    elif n >= 14:
+        return _forecast_holt_winters(demand_series, horizon)
+    elif n >= 7:
+        return _forecast_linear_regression(demand_series, horizon)
+    else:
+        return _forecast_sma(demand_series, horizon)
 
 
 # ═══════════════════════════ Forecasting Models ══════════════════════════════

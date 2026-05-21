@@ -42,4 +42,9 @@ public class ForecastPredictionResponse {
     private Double confidenceScore;
     private String modelUsed;
     private LocalDateTime createdAt;
+
+    // Accuracy (null nếu chưa đủ 7 ngày để đánh giá)
+    private Integer actualDemand7Days;
+    private Double mape;
+    private Double mae;
 }

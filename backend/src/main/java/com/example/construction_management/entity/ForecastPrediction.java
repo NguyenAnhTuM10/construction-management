@@ -55,6 +55,11 @@ public class ForecastPrediction {
     @Column(columnDefinition = "TEXT")
     private String dailyForecastJson;
 
+    // Accuracy tracking — điền sau 7 ngày bởi AccuracyEvaluationScheduler
+    private Integer actualDemand7Days;
+    private Double mape;
+    private Double mae;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

@@ -33,6 +33,26 @@ public interface InventoryTransactionItemRepository extends JpaRepository<Invent
     );
 
     /**
+     * Tổng số lượng xuất kho của 1 sản phẩm trong khoảng [startDate, endDate).
+     * Dùng bởi AccuracyEvaluationScheduler để tính actual demand sau 7 ngày.
+     */
+    @Query(value = """
+            SELECT COALESCE(SUM(ti.quantity), 0)
+            FROM inventory_transaction_items ti
+            JOIN inventory_transactions t ON ti.transaction_id = t.id
+            WHERE ti.product_id = :productId
+              AND t.type = 'OUT'
+              AND t.status = 'COMPLETED'
+              AND t.transaction_date >= :startDate
+              AND t.transaction_date < :endDate
+            """, nativeQuery = true)
+    Long sumOutQtyBetween(
+            @Param("productId") Long productId,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
+
+    /**
      * Lấy danh sách product_id có giao dịch xuất kho COMPLETED từ ngày startDate.
      * Dùng để xác định sản phẩm nào cần forecast.
      */
