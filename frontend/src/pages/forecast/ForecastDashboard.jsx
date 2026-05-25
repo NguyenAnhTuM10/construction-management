@@ -189,7 +189,7 @@ const AccuracyHistoryPanel = ({ productId }) => {
 
   useEffect(() => {
     forecastApi.getHistory(productId)
-      .then(res => setHistory(res.data?.data || []))
+      .then(res => setHistory(res.data || []))
       .catch(() => setHistory([]))
       .finally(() => setLoading(false));
   }, [productId]);

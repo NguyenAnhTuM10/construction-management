@@ -250,6 +250,8 @@ def main():
         _ensure_categories(cur, conn)
         product_rows = _ensure_products(cur, conn)
 
+
+
         print("\n" + "─" * 70)
         print(f"{'Sản phẩm':<35} {'Pattern':<35} {'History':>7} {'Base':>5}")
         print("─" * 70)

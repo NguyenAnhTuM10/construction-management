@@ -1,28 +1,32 @@
 """
-Forecast Service — logic dự báo tồn kho.
+Forecast Service — AI Inventory Forecasting Engine
+===================================================
 
-Chiến lược chọn model (Model Evaluation & Selection):
-  Chỉ dùng 2 model: XGBoost và Holt-Winters.
-  Service chạy cả 2 model đủ điều kiện trên validation window 7 ngày gần nhất,
-  đo MAE, chọn model có sai số thấp nhất.
+Kiến trúc 7 bước:
+  1. Classify demand  — smooth / intermittent / lumpy
+  2. Prepare data     — fill gaps, clip outliers
+  3. Evaluate models  — rolling-origin 3-fold, đo MAE + Bias
+  4. Select winner    — model có weighted score thấp nhất
+  5. Retrain + Forecast — train trên full data, dự báo 7 ngày
+  6. Inventory logic  — Safety Stock, ROP, EOQ (demand-type aware)
+  7. Confidence score — kết hợp data quality + model skill vs naïve
 
-  Điều kiện để evaluate (n = số ngày sau fill):
-    >= 60 ngày → thử: XGBoost + Holt-Winters
-    21–59 ngày → thử: Holt-Winters
-    < 21 ngày  → Holt-Winters (rule-based, không đủ data để tách val set)
+Chỉ 2 model được dùng: XGBoost và Holt-Winters.
+  - XGBoost  : cần n >= 60 ngày, phù hợp smooth demand có pattern rõ
+  - Holt-Winters: cần n >= 14 ngày, bắt trend tốt, fallback cho intermittent
 
-  preferred_model (từ Spring Boot): force dùng model đó nếu đủ data,
-  bỏ qua evaluation → dùng cho kịch bản "người dùng muốn override".
-
-Tại sao XGBoost cần >= 60 ngày?
-  Lag feature lớn nhất là lag_28 → cần 28 hàng "warmup".
-  Sau dropna(), cần ít nhất 20 samples để train có ý nghĩa.
-  60 ngày - 7 (val) - 28 (warmup) ≈ 25 samples → đủ.
+Demand classification (Syntetos-Boylan):
+  ADI = trung bình khoảng cách giữa các ngày có demand
+  CV² = bình phương hệ số biến thiên của demand nonzero
+  smooth       (ADI < 1.32, CV² < 0.49) → XGBoost / HW
+  intermittent (ADI >= 1.32, CV² < 0.49) → HW (demand đều nhưng thưa)
+  erratic      (ADI < 1.32, CV² >= 0.49) → HW (demand thường xuyên nhưng bất thường)
+  lumpy        (ADI >= 1.32, CV² >= 0.49) → HW conservative (demand thưa và bất thường)
 """
 
 import math
 from datetime import datetime
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -36,28 +40,32 @@ from app.models.schemas import (
 )
 from app.services.data_preparation import prepare_time_series
 
-SAFETY_FACTOR = 1.65   # Z-score cho service level 95%
-VAL_DAYS      = 7      # Số ngày hold-out để đo MAE
+# ─────────────────────────── Hằng số ─────────────────────────────────────────
 
-# Số ngày tối thiểu toàn bộ series (trước khi tách val) để mỗi model có thể evaluate
-_MODEL_EVAL_MIN = {
-    "xgboost":      60,   # train >= 53 sau val split
-    "holt_winters": 21,   # train >= 14 sau val split
+SAFETY_FACTOR = 1.65        # Z-score cho service level 95%
+VAL_DAYS      = 7           # Số ngày mỗi fold hold-out
+N_FOLDS       = 3           # Số fold rolling-origin evaluation
+MIN_TRAIN_AFTER_VAL = 14    # Sau khi tách val, train phải còn ít nhất N ngày
+
+# Ngưỡng số ngày để evaluate từng model (toàn bộ series trước split)
+_MIN_N_EVAL = {
+    "xgboost":      60,   # cần 60 - 7*3 = 39 ngày train tối thiểu
+    "holt_winters": 14 + VAL_DAYS * N_FOLDS,  # = 35 ngày
 }
 
-# Ngưỡng để dùng model khi bị force (preferred_model / rule-based)
-_MODEL_FORCE_MIN = {
+# Ngưỡng để force-run model (preferred_model / rule-based fallback)
+_MIN_N_FORCE = {
     "xgboost":      60,
-    "holt_winters":  0,   # HW chạy được với mọi lượng data
+    "holt_winters":  0,
 }
 
 
-# ═══════════════════════════ Public API ══════════════════════════════════════
+# ══════════════════════════ Public API ════════════════════════════════════════
 
 def run_forecast(request: ForecastRequest) -> ForecastResponse:
     results = [
-        forecast_product(product, request.forecast_horizon_days)
-        for product in request.products
+        forecast_product(p, request.forecast_horizon_days)
+        for p in request.products
     ]
     return ForecastResponse(
         forecast_run_at=datetime.utcnow(),
@@ -72,32 +80,32 @@ def forecast_product(product: ProductForecastInput, horizon: int) -> ProductFore
     if df.empty or df["quantity_out"].sum() == 0:
         return _zero_demand_result(product, horizon)
 
-    demand_series = df["quantity_out"].values.astype(float)
-    n = len(demand_series)
+    series = df["quantity_out"].values.astype(float)
+    n      = len(series)
 
-    daily_preds, model_name, model_scores = _select_and_run_model(
-        df, demand_series, n, horizon, product.preferred_model
+    # ── 1. Classify demand pattern ────────────────────────────────────────────
+    demand_type = _classify_demand(series)
+
+    # ── 2–5. Select model, train, forecast ───────────────────────────────────
+    daily_preds, model_name, model_scores = _select_and_forecast(
+        df, series, n, horizon, product.preferred_model, demand_type
     )
-
     daily_preds = [max(0, int(round(p))) for p in daily_preds]
 
-    avg_demand   = float(np.mean(demand_series))
-    std_demand   = float(np.std(demand_series)) if n > 1 else avg_demand * 0.2
+    # ── 6. Inventory calculations ─────────────────────────────────────────────
+    avg_demand, std_demand = _demand_stats(series, demand_type)
 
     safety_stock        = _calc_safety_stock(std_demand, product.lead_time_days)
     reorder_point       = _calc_rop(avg_demand, product.lead_time_days, safety_stock)
     eoq                 = _calc_eoq(avg_demand, product.ordering_cost, product.holding_cost_per_unit)
     days_until_stockout = _calc_days_to_stockout(product.current_stock, avg_demand)
     stockout_risk       = _assess_risk(days_until_stockout)
+    recommended_qty     = _calc_recommended_qty(avg_demand, eoq, product.current_stock, safety_stock)
 
-    # Confidence tích hợp cả MAE thực tế (nếu có)
-    best_mae = model_scores.get(model_name)
-    confidence = _calc_confidence(n, demand_series, model_name, best_mae)
-
-    recommended_qty = max(
-        eoq,
-        max(0, int(avg_demand * 30) - product.current_stock + safety_stock),
-    )
+    # ── 7. Confidence score ───────────────────────────────────────────────────
+    best_mae   = model_scores.get(model_name)
+    naive_mae  = _naive_mae(series)
+    confidence = _calc_confidence(n, series, demand_type, best_mae, naive_mae)
 
     return ProductForecastResult(
         product_id=product.product_id,
@@ -116,138 +124,215 @@ def forecast_product(product: ProductForecastInput, horizon: int) -> ProductFore
     )
 
 
-# ═══════════════════════ Model Selection ═════════════════════════════════════
+# ══════════════════════ Bước 1: Demand Classification ════════════════════════
 
-def _select_and_run_model(
+def _classify_demand(series: np.ndarray) -> str:
+    """
+    Phân loại demand theo Syntetos-Boylan (2005):
+
+      ADI (Average Demand Interval): trung bình khoảng cách (ngày) giữa
+          các ngày có demand > 0. ADI cao → demand thưa.
+
+      CV² (Squared Coefficient of Variation): đo độ bất thường của SIZE
+          demand trên các ngày có demand. CV² cao → demand không đều.
+
+    Bảng phân loại:
+      ┌─────────────┬──────────────┬───────────────┐
+      │             │  CV² < 0.49  │  CV² >= 0.49  │
+      ├─────────────┼──────────────┼───────────────┤
+      │ ADI < 1.32  │   smooth     │   erratic     │
+      │ ADI >= 1.32 │ intermittent │    lumpy      │
+      └─────────────┴──────────────┴───────────────┘
+    """
+    nonzero_idx = np.where(series > 0)[0]
+    if len(nonzero_idx) == 0:
+        return "no_demand"
+
+    # ADI: trung bình khoảng cách giữa các lần có demand
+    if len(nonzero_idx) > 1:
+        intervals = np.diff(nonzero_idx)
+        adi = float(np.mean(intervals))
+    else:
+        adi = float(len(series))  # chỉ có 1 lần demand → rất thưa
+
+    # CV² trên giá trị nonzero
+    nonzero_vals = series[nonzero_idx]
+    if len(nonzero_vals) > 1 and np.mean(nonzero_vals) > 0:
+        cv2 = (float(np.std(nonzero_vals)) / float(np.mean(nonzero_vals))) ** 2
+    else:
+        cv2 = 0.0
+
+    if adi < 1.32 and cv2 < 0.49:
+        return "smooth"
+    elif adi >= 1.32 and cv2 < 0.49:
+        return "intermittent"
+    elif adi < 1.32 and cv2 >= 0.49:
+        return "erratic"
+    else:
+        return "lumpy"
+
+
+# ══════════════════════ Bước 2–5: Model Selection & Forecast ═════════════════
+
+def _select_and_forecast(
     df: pd.DataFrame,
-    demand_series: np.ndarray,
+    series: np.ndarray,
     n: int,
     horizon: int,
-    preferred_model: str | None,
+    preferred_model: Optional[str],
+    demand_type: str,
 ) -> Tuple[List[float], str, Dict[str, float]]:
     """
     Chiến lược:
-    1. preferred_model được chỉ định → force dùng (skip evaluation).
-    2. n < 14 → không đủ data để evaluate → rule-based.
-    3. Còn lại → evaluate tất cả model đủ điều kiện, chọn MAE thấp nhất.
+      A. preferred_model được chỉ định → force dùng nếu đủ data
+      B. n nhỏ → rule-based (không đủ data để eval)
+      C. Còn lại → rolling-origin evaluation, chọn winner
     """
-    # ── 1. preferred_model override ───────────────────────────────────────────
-    if preferred_model and preferred_model in _MODEL_FORCE_MIN:
-        if n >= _MODEL_FORCE_MIN[preferred_model]:
-            preds, name = _run_model(preferred_model, df, demand_series, horizon)
+
+    # A. preferred_model override
+    if preferred_model and preferred_model in _MIN_N_FORCE:
+        if n >= _MIN_N_FORCE[preferred_model]:
+            preds, name = _run_model(preferred_model, df, series, horizon)
             return preds, name, {}
 
-    # ── 2. Không đủ data để tách validation set ───────────────────────────────
-    if n < _MODEL_EVAL_MIN["holt_winters"]:   # n < 21
-        preds, name = _rule_based(df, demand_series, n, horizon)
+    # B. Không đủ data → rule-based
+    min_eval_n = min(
+        v for k, v in _MIN_N_EVAL.items()
+        if _model_eligible(k, n, demand_type)
+    ) if any(_model_eligible(k, n, demand_type) for k in _MIN_N_EVAL) else 999
+
+    if n < _MIN_N_EVAL["holt_winters"]:
+        preds, name = _rule_based(df, series, n, horizon)
         return preds, name, {}
 
-    # ── 3. Evaluate all eligible models, pick best MAE ────────────────────────
-    return _evaluate_and_select(df, demand_series, n, horizon)
+    # C. Rolling-origin evaluation
+    return _rolling_origin_eval(df, series, n, horizon, demand_type)
 
 
-def _evaluate_and_select(
+def _model_eligible(model_name: str, n: int, demand_type: str) -> bool:
+    """Kiểm tra model có đủ điều kiện để evaluate không."""
+    if n < _MIN_N_EVAL.get(model_name, 999):
+        return False
+    # XGBoost không phù hợp với lumpy/intermittent demand
+    if model_name == "xgboost" and demand_type in ("lumpy", "intermittent"):
+        return False
+    return True
+
+
+def _rolling_origin_eval(
     df: pd.DataFrame,
-    demand_series: np.ndarray,
+    series: np.ndarray,
     n: int,
     horizon: int,
+    demand_type: str,
 ) -> Tuple[List[float], str, Dict[str, float]]:
     """
-    Walk-forward single-split evaluation:
-      train = df.iloc[:-VAL_DAYS]   (tất cả trừ 7 ngày cuối)
-      val   = demand_series[-VAL_DAYS:]
+    Rolling-origin evaluation với N_FOLDS fold:
 
-    Chạy mỗi model đủ điều kiện trên train → predict VAL_DAYS bước →
-    đo MAE so với val thực tế → rank → chọn winner → retrain trên full data.
+      Fold 1: train = series[:n-21], val = series[n-21:n-14]
+      Fold 2: train = series[:n-14], val = series[n-14:n-7]
+      Fold 3: train = series[:n-7],  val = series[n-7:]
+
+    Với mỗi fold, đo MAE. Score cuối = mean MAE qua các fold.
+    Model nào score thấp hơn → thắng.
     """
-    train_df     = df.iloc[:-VAL_DAYS].copy().reset_index(drop=True)
-    train_series = train_df["quantity_out"].values.astype(float)
-    val_actual   = demand_series[-VAL_DAYS:]
-    n_train      = len(train_series)
-
-    scores: Dict[str, float] = {}
-
-    # Danh sách model cần thử
     candidates = [
-        model for model, min_n in _MODEL_EVAL_MIN.items()
-        if n >= min_n  # dùng n (full) để check ngưỡng, không phải n_train
+        m for m in ["xgboost", "holt_winters"]
+        if _model_eligible(m, n, demand_type)
     ]
 
-    for model_name in candidates:
-        try:
-            if model_name == "xgboost":
-                preds, _ = _forecast_xgboost(train_df, VAL_DAYS)
-            else:  # holt_winters
-                if n_train < 14:
-                    continue
-                preds, _ = _forecast_holt_winters(train_series, VAL_DAYS)
-
-            mae = float(np.mean(np.abs(np.array(preds[:VAL_DAYS]) - val_actual)))
-            scores[model_name] = round(mae, 2)
-
-        except Exception:
-            # Model fail trên validation → không tính vào candidates
-            pass
-
-    if not scores:
-        # Tất cả model đều fail → fallback
-        preds, name = _rule_based(df, demand_series, n, horizon)
+    if not candidates:
+        preds, name = _rule_based(df, series, n, horizon)
         return preds, name, {}
 
-    # Chọn model thắng (MAE thấp nhất)
-    best_model = min(scores, key=scores.get)
+    # Tính score cho mỗi model qua N_FOLDS fold
+    fold_errors: Dict[str, List[float]] = {m: [] for m in candidates}
+    fold_biases: Dict[str, List[float]] = {m: [] for m in candidates}
 
-    # Retrain winner trên TOÀN BỘ data và forecast thực sự
-    final_preds, winner = _run_model(best_model, df, demand_series, horizon)
+    for fold in range(N_FOLDS):
+        # Cutoff: fold 0 = giữ lại [n-7:], fold 1 = giữ lại [n-14:n-7], ...
+        val_end   = n - VAL_DAYS * fold
+        val_start = val_end - VAL_DAYS
+        if val_start < MIN_TRAIN_AFTER_VAL:
+            break
 
-    return final_preds, winner, scores
+        train_series = series[:val_start]
+        train_df     = df.iloc[:val_start].copy().reset_index(drop=True)
+        val_actual   = series[val_start:val_end]
+
+        for model_name in candidates:
+            try:
+                preds, _ = _run_model(model_name, train_df, train_series, VAL_DAYS)
+                preds_arr = np.array(preds[:VAL_DAYS])
+                mae  = float(np.mean(np.abs(preds_arr - val_actual)))
+                bias = float(np.mean(preds_arr - val_actual))   # + = over-forecast
+                fold_errors[model_name].append(mae)
+                fold_biases[model_name].append(bias)
+            except Exception:
+                pass
+
+    # Tổng hợp scores — bỏ qua model không có đủ fold data
+    final_scores: Dict[str, float] = {}
+    for model_name in candidates:
+        errs = fold_errors[model_name]
+        if not errs:
+            continue
+        avg_mae  = float(np.mean(errs))
+        avg_bias = float(np.mean(fold_biases[model_name]))
+        # Penalty nhẹ nếu bias lớn (systematic over/under-prediction)
+        bias_penalty = abs(avg_bias) * 0.1
+        final_scores[model_name] = round(avg_mae + bias_penalty, 2)
+
+    if not final_scores:
+        preds, name = _rule_based(df, series, n, horizon)
+        return preds, name, {}
+
+    # Chọn winner
+    winner = min(final_scores, key=final_scores.get)
+
+    # Retrain winner trên toàn bộ data và forecast thực sự
+    final_preds, winner_name = _run_model(winner, df, series, horizon)
+
+    return final_preds, winner_name, final_scores
+
+
+def _rule_based(
+    df: pd.DataFrame,
+    series: np.ndarray,
+    n: int,
+    horizon: int,
+) -> Tuple[List[float], str]:
+    """Fallback khi không đủ data để evaluate."""
+    if n >= 60:
+        return _forecast_xgboost(df, horizon)
+    return _forecast_holt_winters(series, horizon)
 
 
 def _run_model(
     model_name: str,
     df: pd.DataFrame,
-    demand_series: np.ndarray,
+    series: np.ndarray,
     horizon: int,
 ) -> Tuple[List[float], str]:
-    """Chạy một model cụ thể trên full data."""
+    """Dispatch sang model function tương ứng."""
     if model_name == "xgboost":
         return _forecast_xgboost(df, horizon)
-    elif model_name == "holt_winters":
-        return _forecast_holt_winters(demand_series, horizon)
-    elif model_name == "linear_regression":
-        return _forecast_linear_regression(demand_series, horizon)
-    else:
-        return _forecast_sma(demand_series, horizon)
+    return _forecast_holt_winters(series, horizon)
 
 
-def _rule_based(
-    df: pd.DataFrame,
-    demand_series: np.ndarray,
-    n: int,
-    horizon: int,
-) -> Tuple[List[float], str]:
-    """Chọn model theo số ngày — fallback khi không đủ data để evaluate."""
-    if n >= 60:
-        return _forecast_xgboost(df, horizon)
-    else:
-        return _forecast_holt_winters(demand_series, horizon)
-
-
-# ═══════════════════════════ Forecasting Models ══════════════════════════════
+# ══════════════════════════ Model Functions ═══════════════════════════════════
 
 def _forecast_xgboost(df: pd.DataFrame, horizon: int) -> Tuple[List[float], str]:
     """
-    XGBoost với feature engineering cho time series.
+    XGBoost time series forecasting với feature engineering.
 
-    Ý tưởng cốt lõi:
-    Biến bài toán "dự báo chuỗi thời gian" thành bài toán "supervised regression".
-    Mỗi ngày = 1 sample với features là:
-      - Lag features: giá trị trong quá khứ (t-1, t-2, ..., t-28)
-      - Rolling stats: trung bình/độ lệch chuẩn cửa sổ trượt
-      - Calendar features: ngày trong tuần, tháng, quý (bắt seasonality)
+    Features:
+      Calendar  : day_of_week, is_weekend, month, quarter
+      Lag       : t-1, t-2, t-3, t-7, t-14, t-21, t-28
+      Rolling   : mean/std/max cửa sổ 7, 14, 28 ngày
 
-    Multi-step forecasting:
-    Dự báo từng bước, dùng kết quả bước trước làm lag cho bước sau.
+    Multi-step: recursive — dùng prediction bước trước làm lag bước sau.
+    Chỉ eligible khi n >= 60 VÀ demand_type == smooth/erratic.
     """
     try:
         from xgboost import XGBRegressor
@@ -255,18 +340,19 @@ def _forecast_xgboost(df: pd.DataFrame, horizon: int) -> Tuple[List[float], str]
         df = df.copy().sort_values("date").reset_index(drop=True)
         df["date"] = pd.to_datetime(df["date"])
 
-        # ── Calendar features ─────────────────────────────────────────────────
-        df["day_of_week"] = df["date"].dt.dayofweek   # 0=Thứ 2, 6=Chủ nhật
+        demand = df["quantity_out"]
+
+        # Calendar features
+        df["day_of_week"] = df["date"].dt.dayofweek
         df["is_weekend"]  = (df["day_of_week"] >= 5).astype(int)
         df["month"]       = df["date"].dt.month
         df["quarter"]     = df["date"].dt.quarter
 
-        # ── Lag features ──────────────────────────────────────────────────────
-        demand = df["quantity_out"]
+        # Lag features
         for lag in [1, 2, 3, 7, 14, 21, 28]:
             df[f"lag_{lag}"] = demand.shift(lag)
 
-        # ── Rolling statistics ────────────────────────────────────────────────
+        # Rolling statistics (shift(1) để tránh leakage)
         shifted = demand.shift(1)
         df["roll_7_mean"]  = shifted.rolling(7).mean()
         df["roll_7_std"]   = shifted.rolling(7).std().fillna(0)
@@ -277,7 +363,7 @@ def _forecast_xgboost(df: pd.DataFrame, horizon: int) -> Tuple[List[float], str]
         df_clean = df.dropna().reset_index(drop=True)
 
         if len(df_clean) < 20:
-            return _forecast_holt_winters(demand.values, horizon)
+            return _forecast_holt_winters(demand.values.astype(float), horizon)
 
         FEATURE_COLS = [
             "day_of_week", "is_weekend", "month", "quarter",
@@ -287,20 +373,23 @@ def _forecast_xgboost(df: pd.DataFrame, horizon: int) -> Tuple[List[float], str]
 
         X_train = df_clean[FEATURE_COLS].values
         y_train = df_clean["quantity_out"].values
+        n_train = len(df_clean)
 
         model = XGBRegressor(
-            n_estimators=200,
-            max_depth=4,
-            learning_rate=0.05,
+            n_estimators=150,
+            max_depth=3,                          # shallower = ít overfit hơn
+            learning_rate=0.08,
             subsample=0.8,
             colsample_bytree=0.8,
-            min_child_weight=5,
+            min_child_weight=max(5, n_train // 8), # scale với data size
+            reg_alpha=0.1,                         # L1 regularization
+            reg_lambda=1.0,                        # L2 regularization
             random_state=42,
             verbosity=0,
         )
         model.fit(X_train, y_train)
 
-        # ── Multi-step recursive forecasting ─────────────────────────────────
+        # Multi-step recursive forecasting
         history   = demand.values.tolist()
         last_date = df["date"].max()
         predictions: List[float] = []
@@ -309,7 +398,7 @@ def _forecast_xgboost(df: pd.DataFrame, horizon: int) -> Tuple[List[float], str]
             future_date = last_date + pd.Timedelta(days=step + 1)
             h = history
 
-            def _safe_get(offset: int) -> float:
+            def _safe_lag(offset: int) -> float:
                 return h[-offset] if len(h) >= offset else float(np.mean(h))
 
             def _roll_mean(window: int) -> float:
@@ -326,8 +415,8 @@ def _forecast_xgboost(df: pd.DataFrame, horizon: int) -> Tuple[List[float], str]
                 int(future_date.dayofweek >= 5),
                 future_date.month,
                 future_date.quarter,
-                _safe_get(1), _safe_get(2), _safe_get(3),
-                _safe_get(7), _safe_get(14), _safe_get(21), _safe_get(28),
+                _safe_lag(1), _safe_lag(2), _safe_lag(3),
+                _safe_lag(7), _safe_lag(14), _safe_lag(21), _safe_lag(28),
                 _roll_mean(7), _roll_std(7), _roll_mean(14),
                 _roll_mean(28), _roll_max(28),
             ]
@@ -343,41 +432,94 @@ def _forecast_xgboost(df: pd.DataFrame, horizon: int) -> Tuple[List[float], str]
 
 
 def _forecast_holt_winters(series: np.ndarray, horizon: int) -> Tuple[List[float], str]:
-    """Double Exponential Smoothing — bắt trend. Dùng khi < 60 ngày."""
+    """
+    Double Exponential Smoothing (Holt's method) — bắt trend tuyến tính.
+    seasonal=None vì với 90 ngày không đủ 2 chu kỳ seasonal đầy đủ.
+
+    Fallback nội bộ: nếu statsmodels fail → dùng weighted moving average
+    (trọng số gần nhất cao hơn) nhưng vẫn label là holt_winters.
+    """
     try:
         from statsmodels.tsa.holtwinters import ExponentialSmoothing
 
         model = ExponentialSmoothing(
-            series, trend="add", seasonal=None, initialization_method="estimated"
+            series,
+            trend="add",
+            seasonal=None,
+            initialization_method="estimated",
         )
         fit = model.fit(optimized=True)
         return fit.forecast(horizon).tolist(), "holt_winters"
+
     except Exception:
-        # Fallback nội bộ: trung bình 7 ngày gần nhất, vẫn label holt_winters
+        # Weighted moving average — trọng số tăng dần về cuối
         window = min(7, len(series))
-        avg = float(np.mean(series[-window:])) if len(series) > 0 else 0.0
-        return [avg] * horizon, "holt_winters"
+        weights = np.arange(1, window + 1, dtype=float)
+        weights /= weights.sum()
+        avg = float(np.dot(series[-window:], weights))
+        return [max(0.0, avg)] * horizon, "holt_winters"
 
 
+# ══════════════════════ Bước 6: Inventory Calculations ═══════════════════════
 
-# ═══════════════════════ Inventory Calculations ══════════════════════════════
+def _demand_stats(
+    series: np.ndarray, demand_type: str
+) -> Tuple[float, float]:
+    """
+    Tính avg và std demand theo demand_type.
+
+    Với smooth: dùng toàn bộ series (kể cả zero — zero có thể là ngày thật ít demand).
+    Với intermittent/lumpy/erratic: dùng nonzero mean để tránh underestimate.
+    Std dùng để tính safety stock — luôn trên toàn bộ series.
+    """
+    nonzero = series[series > 0]
+
+    if demand_type == "smooth":
+        avg = float(np.mean(series))
+    else:
+        # Intermittent/lumpy: avg = nonzero_mean × occurrence_rate
+        occurrence_rate = len(nonzero) / len(series) if len(series) > 0 else 1.0
+        avg = float(np.mean(nonzero)) * occurrence_rate if len(nonzero) > 0 else 0.0
+
+    std = float(np.std(series)) if len(series) > 1 else avg * 0.2
+    return avg, std
+
 
 def _calc_safety_stock(std_demand: float, lead_time: int) -> int:
-    """Safety Stock = Z * σ * √lead_time  (service level 95%)"""
+    """
+    Safety Stock = Z × σ_demand × √lead_time
+    Giả định lead_time cố định (chưa có σ_lead_time).
+    """
     return max(0, int(math.ceil(SAFETY_FACTOR * std_demand * math.sqrt(lead_time))))
 
 
 def _calc_rop(avg_demand: float, lead_time: int, safety_stock: int) -> int:
-    """Reorder Point = avg_demand * lead_time + safety_stock"""
+    """Reorder Point = avg_demand × lead_time + safety_stock"""
     return max(0, int(math.ceil(avg_demand * lead_time)) + safety_stock)
 
 
 def _calc_eoq(avg_demand: float, ordering_cost: float, holding_cost: float) -> int:
-    """EOQ = √(2 * D * S / H)"""
+    """
+    EOQ = √(2DS/H)
+    D = annual demand, S = ordering cost, H = holding cost per unit per year.
+    Giả định: demand đủ đều để EOQ có ý nghĩa.
+    Với lumpy demand, kết quả này chỉ là tham khảo.
+    """
     if avg_demand <= 0 or holding_cost <= 0:
         return 0
     annual_demand = avg_demand * 365
     return max(1, int(math.sqrt(2 * annual_demand * ordering_cost / holding_cost)))
+
+
+def _calc_recommended_qty(
+    avg_demand: float, eoq: int, current_stock: int, safety_stock: int
+) -> int:
+    """
+    Recommended reorder qty = max(EOQ, lượng cần để đạt 30 ngày tồn kho + safety stock).
+    Không mix 2 philosophy — dùng EOQ làm floor, order-up-to làm ceiling reference.
+    """
+    order_up_to = max(0, int(avg_demand * 30) - current_stock + safety_stock)
+    return max(eoq, order_up_to)
 
 
 def _calc_days_to_stockout(current_stock: int, avg_demand: float) -> int:
@@ -387,87 +529,97 @@ def _calc_days_to_stockout(current_stock: int, avg_demand: float) -> int:
 
 
 def _assess_risk(days_until_stockout: int) -> StockoutRisk:
-    if days_until_stockout <= 3:
-        return StockoutRisk.CRITICAL
-    elif days_until_stockout <= 7:
-        return StockoutRisk.HIGH
-    elif days_until_stockout <= 14:
-        return StockoutRisk.MEDIUM
+    if days_until_stockout <= 3:   return StockoutRisk.CRITICAL
+    elif days_until_stockout <= 7: return StockoutRisk.HIGH
+    elif days_until_stockout <= 14: return StockoutRisk.MEDIUM
     return StockoutRisk.LOW
+
+
+# ══════════════════════ Bước 7: Confidence Score ═════════════════════════════
+
+def _naive_mae(series: np.ndarray) -> float:
+    """
+    MAE của naïve forecast: dự báo ngày hôm nay = ngày hôm qua.
+    Dùng làm baseline để so sánh model skill.
+    MASE = model_MAE / naive_MAE — nếu < 1.0 thì model tốt hơn naïve.
+    """
+    if len(series) < 2:
+        return 1.0
+    errors = np.abs(np.diff(series))
+    return float(np.mean(errors)) if len(errors) > 0 else 1.0
 
 
 def _calc_confidence(
     n: int,
     series: np.ndarray,
-    model_used: str,
-    best_mae: float | None,
+    demand_type: str,
+    best_mae: Optional[float],
+    naive_mae: float,
 ) -> float:
     """
-    Confidence score 0.10 → 0.95, tích hợp 3 yếu tố:
+    Confidence score: kết hợp 3 thành phần có trọng số.
 
-    1. Data volume  : nhiều ngày lịch sử → base cao hơn
-    2. Demand regularity:
-       - Sparsity (tỷ lệ ngày không có giao dịch)
-       - CV tính trên ngày CÓ demand (nonzero) — tránh bị kéo bởi fill-zeros
-    3. Validation accuracy: MAE / mean_nonzero
-       - Dùng mean của ngày có demand thật, không phải mean cả series
-         (lumpy product có mean_series rất thấp → relative_mae bị inflate)
+    Thành phần 1 — Data Volume (40%):
+      Nhiều data hơn → forecast tin cậy hơn.
+      Scale tuyến tính từ 0 (n=0) đến 1 (n>=180).
 
-    Tại sao không dùng mean_series cho MAE ratio?
-      Ví dụ lumpy: [0,0,0,0,45,0,0,72,...] → mean_series ≈ 2.5
-      MAE=9.83 → relative = 9.83/2.5 = 3.9 → penalty lớn không hợp lý
-      mean_nonzero = (45+72+...)/count ≈ 45 → relative = 9.83/45 = 0.22 → hợp lý hơn
+    Thành phần 2 — Demand Regularity (30%):
+      smooth=1.0, erratic=0.7, intermittent=0.6, lumpy=0.4
+      Demand đều → forecast dễ và tin cậy hơn.
 
-    Scale: 0.10 (không đủ data/model rất kém) → 0.95 (nhiều data, model rất chính xác)
+    Thành phần 3 — Model Skill vs Naïve (30%):
+      MASE = model_MAE / naive_MAE
+      MASE < 1 → model tốt hơn naïve → điểm cao
+      MASE > 1 → model tệ hơn naïve → điểm thấp
+      Nếu chưa có MAE (rule-based) → dùng 0.5 (neutral)
+
+    Lý do không dùng heuristic n-based base score như trước:
+      Base score cũ không phân biệt 180 ngày data tốt vs 180 ngày nhiễu.
+      MASE-based score phản ánh THỰC TẾ model có tốt hơn làm gì không.
     """
-    # ── 1. Base từ data volume ────────────────────────────────────────────────
-    if n >= 180:   base = 0.90
-    elif n >= 90:  base = 0.84
-    elif n >= 60:  base = 0.78
-    elif n >= 30:  base = 0.70
-    elif n >= 21:  base = 0.62
-    elif n >= 14:  base = 0.52
-    elif n >= 7:   base = 0.42
-    else:          base = 0.25
+    # ── Thành phần 1: Data volume score ──────────────────────────────────────
+    vol_score = min(1.0, n / 180.0)   # 0 → 1 khi n tăng từ 0 → 180
 
-    # ── 2. Demand regularity ──────────────────────────────────────────────────
-    nonzero = series[series > 0]
-    n_nonzero = len(nonzero)
+    # ── Thành phần 2: Demand regularity score ────────────────────────────────
+    regularity_map = {
+        "smooth":       1.0,
+        "erratic":      0.70,
+        "intermittent": 0.60,
+        "lumpy":        0.40,
+        "no_demand":    0.10,
+    }
+    reg_score = regularity_map.get(demand_type, 0.5)
 
-    if n_nonzero == 0:
-        return 0.10   # Không có demand gì cả
+    # ── Thành phần 3: Model skill score (MASE-based) ─────────────────────────
+    if best_mae is not None and naive_mae > 0:
+        mase = best_mae / naive_mae
+        if mase <= 0.50:   skill_score = 1.00   # model tốt hơn naïve 2x+
+        elif mase <= 0.75: skill_score = 0.85
+        elif mase <= 1.00: skill_score = 0.70   # tốt hơn naïve một chút
+        elif mase <= 1.25: skill_score = 0.50   # xấp xỉ naïve
+        elif mase <= 1.50: skill_score = 0.35   # tệ hơn naïve
+        else:              skill_score = 0.20   # tệ hơn naïve nhiều
+    else:
+        skill_score = 0.50   # rule-based / không có eval data → neutral
 
-    mean_nz = float(np.mean(nonzero))   # Mean của ngày thực sự có giao dịch
+    # ── Kết hợp có trọng số ──────────────────────────────────────────────────
+    confidence = (
+        0.40 * vol_score    +
+        0.30 * reg_score    +
+        0.30 * skill_score
+    )
 
-    # Sparsity: tỷ lệ ngày zero (weekend, ngày lễ, lumpy = nhiều zero)
-    sparsity = 1.0 - (n_nonzero / n)
-    base -= min(sparsity, 0.80) * 0.12  # tối đa -9.6%
+    return max(0.10, min(0.95, round(confidence, 3)))
 
-    # CV tính trên ngày nonzero (loại bỏ nhiễu từ fill-zeros)
-    if n_nonzero > 1:
-        cv_nz = float(np.std(nonzero)) / mean_nz
-        base -= min(cv_nz, 1.5) * 0.08  # tối đa -12%
 
-    # ── 3. Validation accuracy ────────────────────────────────────────────────
-    if best_mae is not None and mean_nz > 0:
-        # So sánh MAE với demand THỰC TẾ (nonzero mean), không phải mean bao gồm zero fill
-        relative_mae = best_mae / mean_nz
-        if relative_mae <= 0.10:    base += 0.08   # sai số <10%: rất chính xác
-        elif relative_mae <= 0.20:  base += 0.05   # <20%: tốt
-        elif relative_mae <= 0.35:  base += 0.02   # <35%: trên trung bình
-        elif relative_mae <= 0.60:  pass            # <60%: trung bình
-        elif relative_mae <= 1.00:  base -= 0.05   # <100%: kém
-        else:                       base -= 0.10   # >100%: rất kém (thường do lumpy)
-
-    return max(0.10, min(0.95, round(base, 3)))
-
+# ══════════════════════════ Zero Demand ══════════════════════════════════════
 
 def _zero_demand_result(product: ProductForecastInput, horizon: int) -> ProductForecastResult:
     return ProductForecastResult(
         product_id=product.product_id,
         predicted_demand_7days=0,
         avg_daily_demand=0.0,
-        confidence_score=0.1,
+        confidence_score=0.10,
         stockout_risk=StockoutRisk.LOW,
         days_until_stockout=9999,
         reorder_point=0,
