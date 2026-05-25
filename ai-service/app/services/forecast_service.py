@@ -265,7 +265,7 @@ def _forecast_holt_winters(series: np.ndarray, horizon: int) -> Tuple[List[float
         model = ExponentialSmoothing(
             series, trend="add", seasonal=None, initialization_method="estimated"
         )
-        fit = model.fit(optimized=True, disp=False)
+        fit = model.fit(optimized=True)
         return fit.forecast(horizon).tolist(), "holt_winters"
     except Exception:
         return _forecast_sma(series, horizon)
