@@ -437,50 +437,61 @@ def _calc_confidence(
     best_mae: float | None,
 ) -> float:
     """
-    Confidence score tích hợp 3 yếu tố:
-    1. Data volume: nhiều ngày → base cao hơn
-    2. Coefficient of Variation: demand biến động nhiều → giảm confidence
-    3. MAE thực tế / avg_demand (nếu có evaluation): sai số thực tế
+    Confidence score 0.10 → 0.95, tích hợp 3 yếu tố:
 
-    Scale: 0.1 (rất thấp) → 0.95 (rất cao)
+    1. Data volume  : nhiều ngày lịch sử → base cao hơn
+    2. Demand regularity:
+       - Sparsity (tỷ lệ ngày không có giao dịch)
+       - CV tính trên ngày CÓ demand (nonzero) — tránh bị kéo bởi fill-zeros
+    3. Validation accuracy: MAE / mean_nonzero
+       - Dùng mean của ngày có demand thật, không phải mean cả series
+         (lumpy product có mean_series rất thấp → relative_mae bị inflate)
+
+    Tại sao không dùng mean_series cho MAE ratio?
+      Ví dụ lumpy: [0,0,0,0,45,0,0,72,...] → mean_series ≈ 2.5
+      MAE=9.83 → relative = 9.83/2.5 = 3.9 → penalty lớn không hợp lý
+      mean_nonzero = (45+72+...)/count ≈ 45 → relative = 9.83/45 = 0.22 → hợp lý hơn
+
+    Scale: 0.10 (không đủ data/model rất kém) → 0.95 (nhiều data, model rất chính xác)
     """
     # ── 1. Base từ data volume ────────────────────────────────────────────────
-    if n >= 180:
-        base = 0.88
-    elif n >= 90:
-        base = 0.82
-    elif n >= 60:
-        base = 0.75
-    elif n >= 30:
-        base = 0.65
-    elif n >= 21:
-        base = 0.55
-    elif n >= 14:
-        base = 0.45
-    elif n >= 7:
-        base = 0.35
-    else:
-        base = 0.20
+    if n >= 180:   base = 0.90
+    elif n >= 90:  base = 0.84
+    elif n >= 60:  base = 0.78
+    elif n >= 30:  base = 0.70
+    elif n >= 21:  base = 0.62
+    elif n >= 14:  base = 0.52
+    elif n >= 7:   base = 0.42
+    else:          base = 0.25
 
-    # ── 2. Penalty từ Coefficient of Variation ────────────────────────────────
-    mean = np.mean(series)
-    if mean > 0:
-        cv = np.std(series) / mean
-        base -= min(cv, 1.0) * 0.15   # Giảm tối đa 15% nếu demand rất không đều
+    # ── 2. Demand regularity ──────────────────────────────────────────────────
+    nonzero = series[series > 0]
+    n_nonzero = len(nonzero)
 
-    # ── 3. Điều chỉnh từ MAE thực tế ─────────────────────────────────────────
-    if best_mae is not None and mean > 0:
-        relative_mae = best_mae / mean   # MAPE-like: sai số / trung bình demand
-        if relative_mae <= 0.10:
-            base += 0.07   # Model rất chính xác: +7%
-        elif relative_mae <= 0.20:
-            base += 0.03   # Chính xác: +3%
-        elif relative_mae <= 0.40:
-            pass           # Trung bình: không thay đổi
-        elif relative_mae <= 0.70:
-            base -= 0.05   # Kém: -5%
-        else:
-            base -= 0.12   # Rất kém: -12%
+    if n_nonzero == 0:
+        return 0.10   # Không có demand gì cả
+
+    mean_nz = float(np.mean(nonzero))   # Mean của ngày thực sự có giao dịch
+
+    # Sparsity: tỷ lệ ngày zero (weekend, ngày lễ, lumpy = nhiều zero)
+    sparsity = 1.0 - (n_nonzero / n)
+    base -= min(sparsity, 0.80) * 0.12  # tối đa -9.6%
+
+    # CV tính trên ngày nonzero (loại bỏ nhiễu từ fill-zeros)
+    if n_nonzero > 1:
+        cv_nz = float(np.std(nonzero)) / mean_nz
+        base -= min(cv_nz, 1.5) * 0.08  # tối đa -12%
+
+    # ── 3. Validation accuracy ────────────────────────────────────────────────
+    if best_mae is not None and mean_nz > 0:
+        # So sánh MAE với demand THỰC TẾ (nonzero mean), không phải mean bao gồm zero fill
+        relative_mae = best_mae / mean_nz
+        if relative_mae <= 0.10:    base += 0.08   # sai số <10%: rất chính xác
+        elif relative_mae <= 0.20:  base += 0.05   # <20%: tốt
+        elif relative_mae <= 0.35:  base += 0.02   # <35%: trên trung bình
+        elif relative_mae <= 0.60:  pass            # <60%: trung bình
+        elif relative_mae <= 1.00:  base -= 0.05   # <100%: kém
+        else:                       base -= 0.10   # >100%: rất kém (thường do lumpy)
 
     return max(0.10, min(0.95, round(base, 3)))
 
