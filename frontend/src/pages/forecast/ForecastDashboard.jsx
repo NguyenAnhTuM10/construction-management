@@ -30,11 +30,11 @@ const RISK_CONFIG = {
 };
 
 const MODEL_CONFIG = {
-  xgboost:               { label: 'XGBoost',      color: 'purple' },
-  holt_winters:          { label: 'Holt-Winters',  color: 'blue'   },
-  linear_regression:     { label: 'Linear Reg.',   color: 'cyan'   },
-  simple_moving_average: { label: 'SMA',           color: 'default'},
-  no_history:            { label: 'No Data',       color: 'error'  },
+  xgboost:               { label: 'XGBoost',      color: 'purple', desc: 'Gradient boosting + feature engineering (lag, calendar). Tốt nhất khi có ≥60 ngày data với pattern rõ ràng.' },
+  holt_winters:          { label: 'Holt-Winters',  color: 'blue',   desc: 'Double Exponential Smoothing — bắt trend tuyến tính. Phù hợp 14–59 ngày data.' },
+  linear_regression:     { label: 'Linear Reg.',   color: 'cyan',   desc: 'Hồi quy tuyến tính trên time index. Phù hợp 7–13 ngày data.' },
+  simple_moving_average: { label: 'SMA',           color: 'default', desc: 'Trung bình trượt 3 ngày. Fallback khi <7 ngày data.' },
+  no_history:            { label: 'No Data',       color: 'error',   desc: 'Không có lịch sử giao dịch.' },
 };
 
 // Nhãn 7 ngày — bắt đầu từ ngày mai (T2–CN)
@@ -61,6 +61,123 @@ const InventoryDetailCard = ({ label, value, hint, highlight }) => (
     </div>
   </Col>
 );
+
+// ── Model Selection Panel ─────────────────────────────────────────────────────
+
+const ModelSelectionPanel = ({ record }) => {
+  const scores = record.modelScores || {};
+  const hasScores = Object.keys(scores).length > 0;
+  const winner = record.modelUsed;
+  const winnerCfg = MODEL_CONFIG[winner] || { label: winner, color: 'default', desc: '' };
+
+  // Confidence breakdown
+  const conf = Math.round((record.confidenceScore || 0) * 100);
+  const confColor = conf >= 70 ? '#52c41a' : conf >= 50 ? '#faad14' : '#ff4d4f';
+  const confLabel = conf >= 70 ? 'Cao' : conf >= 50 ? 'Trung bình' : 'Thấp';
+
+  if (!hasScores) {
+    return (
+      <div style={{ background: '#fafafa', border: '1px solid #f0f0f0', borderRadius: 8, padding: '12px 16px' }}>
+        <Text strong style={{ fontSize: 13 }}>🤖 Model AI được sử dụng</Text>
+        <div style={{ marginTop: 8 }}>
+          <Tag color={winnerCfg.color} style={{ fontWeight: 600 }}>{winnerCfg.label}</Tag>
+          <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>
+            {winner === 'no_history'
+              ? 'Không có lịch sử giao dịch để dự báo.'
+              : 'Chọn theo quy tắc — chưa đủ data để so sánh các model (cần ≥14 ngày).'}
+          </Text>
+        </div>
+        {winnerCfg.desc && (
+          <Text type="secondary" style={{ fontSize: 11, display: 'block', marginTop: 4, color: '#888' }}>
+            {winnerCfg.desc}
+          </Text>
+        )}
+      </div>
+    );
+  }
+
+  // Sort models by MAE ascending (best first)
+  const sorted = Object.entries(scores).sort(([, a], [, b]) => a - b);
+  const bestMAE = sorted[0]?.[1] ?? 0;
+  const maxMAE  = sorted[sorted.length - 1]?.[1] ?? 1;
+
+  // Explanation text
+  const winnerMAE = scores[winner];
+  const runnerUp  = sorted.find(([k]) => k !== winner);
+  const improvement = runnerUp
+    ? Math.round(((runnerUp[1] - winnerMAE) / runnerUp[1]) * 100)
+    : 0;
+
+  return (
+    <div style={{ background: '#f9f0ff', border: '1px solid #d3adf7', borderRadius: 8, padding: '12px 16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <Text strong style={{ fontSize: 13 }}>🤖 Tại sao chọn {winnerCfg.label}?</Text>
+        <Tooltip title={`Confidence ${conf}% — ${confLabel}: dựa trên lượng data (${Math.round(record.avgDailyDemand * 90)} ngày ước tính), độ biến động demand, và sai số MAE thực tế.`}>
+          <span style={{ cursor: 'help', fontSize: 11, color: confColor, fontWeight: 600 }}>
+            Tin cậy: {conf}% ({confLabel}) <InfoCircleOutlined />
+          </span>
+        </Tooltip>
+      </div>
+
+      {/* Explanation text */}
+      <div style={{
+        background: 'white', borderRadius: 6, padding: '8px 12px',
+        marginBottom: 10, borderLeft: '3px solid #722ed1',
+      }}>
+        <Text style={{ fontSize: 12 }}>
+          Hệ thống đã chạy <strong>{sorted.length} model</strong> trên 7 ngày validation gần nhất.{' '}
+          <Tag color={winnerCfg.color} style={{ margin: '0 2px' }}>{winnerCfg.label}</Tag>
+          {' '}có sai số thấp nhất <strong>(MAE = {winnerMAE?.toFixed(2)})</strong>
+          {runnerUp && (
+            <> — tốt hơn {MODEL_CONFIG[runnerUp[0]]?.label || runnerUp[0]} {improvement}%</>
+          )}.
+        </Text>
+        <Text type="secondary" style={{ fontSize: 11, display: 'block', marginTop: 4 }}>
+          {winnerCfg.desc}
+        </Text>
+      </div>
+
+      {/* MAE comparison bars */}
+      <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 6 }}>
+        MAE thấp hơn = dự báo chính xác hơn trên validation set (7 ngày gần nhất):
+      </Text>
+      {sorted.map(([model, mae]) => {
+        const cfg = MODEL_CONFIG[model] || { label: model, color: 'default' };
+        const isWinner = model === winner;
+        const barPct = maxMAE > 0 ? Math.round((mae / maxMAE) * 100) : 0;
+        const tagColors = { purple: '#722ed1', blue: '#1677ff', cyan: '#13c2c2', default: '#8c8c8c' };
+        const barColor = isWinner ? (tagColors[cfg.color] || '#722ed1') : '#d9d9d9';
+
+        return (
+          <div key={model} style={{ marginBottom: 5 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 100, flexShrink: 0 }}>
+                <Tag color={isWinner ? cfg.color : 'default'} style={{ margin: 0, fontWeight: isWinner ? 700 : 400 }}>
+                  {isWinner ? '✅ ' : ''}{cfg.label}
+                </Tag>
+              </div>
+              <div style={{ flex: 1, background: '#f0f0f0', borderRadius: 4, height: 14, overflow: 'hidden' }}>
+                <div style={{
+                  width: `${barPct}%`, height: '100%',
+                  background: barColor, borderRadius: 4,
+                  transition: 'width 0.3s',
+                }} />
+              </div>
+              <Text style={{ width: 52, textAlign: 'right', fontSize: 12, fontWeight: isWinner ? 700 : 400, flexShrink: 0 }}>
+                {mae.toFixed(2)}
+              </Text>
+            </div>
+          </div>
+        );
+      })}
+      <Text type="secondary" style={{ fontSize: 10, marginTop: 4, display: 'block' }}>
+        * MAE = Mean Absolute Error (đơn vị: {record.unit}/ngày). Được đo trên 7 ngày hold-out trước khi retrain trên toàn bộ data.
+      </Text>
+    </div>
+  );
+};
+
+// ─────────────────────────── Expanded Row ────────────────────────────────────
 
 const ExpandedRow = ({ record }) => {
   const chartData = (record.dailyForecast || []).map((qty, i) => ({
@@ -135,6 +252,11 @@ const ExpandedRow = ({ record }) => {
             style={{ marginTop: 8, fontSize: 12 }}
           />
         )}
+      </Col>
+
+      {/* Model Selection Reasoning — full width */}
+      <Col xs={24}>
+        <ModelSelectionPanel record={record} />
       </Col>
     </Row>
   );

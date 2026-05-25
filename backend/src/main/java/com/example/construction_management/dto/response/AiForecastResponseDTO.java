@@ -4,7 +4,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * DTO nhận kết quả trả về từ AI service.
@@ -64,5 +66,11 @@ public class AiForecastResponseDTO {
 
         @JsonProperty("model_used")
         private String modelUsed;
+
+        // MAE của từng model trên 7-day validation set.
+        // Rỗng nếu không đủ data để evaluate (< 14 ngày).
+        // Ví dụ: {"xgboost": 3.52, "holt_winters": 7.97, "linear_regression": 8.36}
+        @JsonProperty("model_scores")
+        private Map<String, Double> modelScores = new HashMap<>();
     }
 }

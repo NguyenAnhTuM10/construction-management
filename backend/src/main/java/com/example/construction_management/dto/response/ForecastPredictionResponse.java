@@ -6,6 +6,7 @@ import lombok.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @NoArgsConstructor
@@ -41,6 +42,8 @@ public class ForecastPredictionResponse {
     // Metadata
     private Double confidenceScore;
     private String modelUsed;
+    // MAE từng model trên validation set — để FE giải thích "tại sao chọn model X"
+    private Map<String, Double> modelScores;
     private LocalDateTime createdAt;
 
     // Accuracy (null nếu chưa đủ 7 ngày để đánh giá)

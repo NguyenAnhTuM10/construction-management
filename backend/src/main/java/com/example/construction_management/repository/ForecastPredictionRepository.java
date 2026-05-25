@@ -29,13 +29,18 @@ public interface ForecastPredictionRepository extends JpaRepository<ForecastPred
     List<Object[]> findModelAccuracyByProduct(@Param("productId") Long productId);
 
     /**
-     * Lấy toàn bộ dự báo mới nhất (ngày forecast_date lớn nhất),
+     * Lấy 1 bản ghi mới nhất (id lớn nhất) cho mỗi sản phẩm,
      * sắp xếp theo mức độ nguy hiểm giảm dần.
+     *
+     * Tại sao dùng MAX(id) thay vì MAX(forecastDate)?
+     * Cùng ngày có thể trigger nhiều lần → nhiều bản ghi cùng forecastDate.
+     * ID tự tăng đảm bảo lấy đúng lần chạy mới nhất.
      */
     @Query("SELECT fp FROM ForecastPrediction fp " +
            "JOIN FETCH fp.product " +
-           "WHERE fp.forecastDate = (" +
-           "  SELECT MAX(fp2.forecastDate) FROM ForecastPrediction fp2" +
+           "WHERE fp.id IN (" +
+           "  SELECT MAX(fp2.id) FROM ForecastPrediction fp2 " +
+           "  GROUP BY fp2.product.id" +
            ") " +
            "ORDER BY fp.stockoutRisk DESC, fp.daysUntilStockout ASC")
     List<ForecastPrediction> findLatestForecasts();

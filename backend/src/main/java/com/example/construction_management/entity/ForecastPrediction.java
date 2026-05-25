@@ -55,6 +55,11 @@ public class ForecastPrediction {
     @Column(columnDefinition = "TEXT")
     private String dailyForecastJson;
 
+    // JSON object: {"xgboost": 3.52, "holt_winters": 7.97} — MAE từng model trên validation set
+    // Rỗng ("{}") nếu không đủ data để evaluate
+    @Column(columnDefinition = "TEXT")
+    private String modelScoresJson;
+
     // Accuracy tracking — điền sau 7 ngày bởi AccuracyEvaluationScheduler
     private Integer actualDemand7Days;
     private Double mape;

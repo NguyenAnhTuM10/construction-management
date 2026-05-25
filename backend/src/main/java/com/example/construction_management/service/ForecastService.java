@@ -21,6 +21,7 @@ import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -146,6 +147,16 @@ public class ForecastService {
             dailyJson = "[]";
         }
 
+        String modelScoresJson;
+        try {
+            Map<String, Double> scores = result.getModelScores();
+            modelScoresJson = (scores != null && !scores.isEmpty())
+                    ? objectMapper.writeValueAsString(scores)
+                    : "{}";
+        } catch (JsonProcessingException e) {
+            modelScoresJson = "{}";
+        }
+
         Product product = productOpt.get();
         return ForecastPrediction.builder()
                 .product(product)
@@ -162,6 +173,7 @@ public class ForecastService {
                 .daysUntilStockout(result.getDaysUntilStockout())
                 .modelUsed(result.getModelUsed())
                 .dailyForecastJson(dailyJson)
+                .modelScoresJson(modelScoresJson)
                 .build();
     }
 
@@ -173,6 +185,16 @@ public class ForecastService {
                     : Collections.emptyList();
         } catch (JsonProcessingException e) {
             dailyForecast = Collections.emptyList();
+        }
+
+        Map<String, Double> modelScores;
+        try {
+            String json = fp.getModelScoresJson();
+            modelScores = (json != null && !json.isBlank() && !json.equals("{}"))
+                    ? objectMapper.readValue(json, new TypeReference<>() {})
+                    : Collections.emptyMap();
+        } catch (JsonProcessingException e) {
+            modelScores = Collections.emptyMap();
         }
 
         return ForecastPredictionResponse.builder()
@@ -193,6 +215,7 @@ public class ForecastService {
                 .confidenceScore(fp.getConfidenceScore())
                 .daysUntilStockout(fp.getDaysUntilStockout())
                 .modelUsed(fp.getModelUsed())
+                .modelScores(modelScores)
                 .dailyForecast(dailyForecast)
                 .createdAt(fp.getCreatedAt())
                 .actualDemand7Days(fp.getActualDemand7Days())
