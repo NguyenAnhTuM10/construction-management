@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Row, Col, Card, Table, Tag, Button, Alert, Progress,
-  Statistic, Tooltip, Typography, Space, message, Modal,
+  Statistic, Tooltip, Typography, Space, message, Modal, Spin,
 } from 'antd';
 import {
   RobotOutlined, ReloadOutlined, WarningOutlined,
   SafetyCertificateOutlined, ShoppingCartOutlined,
   InfoCircleOutlined, FireOutlined, ExperimentOutlined,
+  HistoryOutlined, TrophyOutlined,
 } from '@ant-design/icons';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -180,6 +181,153 @@ const ModelSelectionPanel = ({ record }) => {
   );
 };
 
+// ─────────────────────────── Accuracy History Panel ─────────────────────────
+
+const AccuracyHistoryPanel = ({ productId }) => {
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    forecastApi.getHistory(productId)
+      .then(res => setHistory(res.data?.data || []))
+      .catch(() => setHistory([]))
+      .finally(() => setLoading(false));
+  }, [productId]);
+
+  if (loading) return <Spin size="small" />;
+
+  const evaluated = history.filter(h => h.mape !== null && h.mape !== undefined);
+  const hasHistory = evaluated.length > 0;
+
+  // Model học được: model có MAPE thấp nhất qua các lần đánh giá
+  const modelMape = {};
+  evaluated.forEach(h => {
+    if (!modelMape[h.modelUsed]) modelMape[h.modelUsed] = [];
+    modelMape[h.modelUsed].push(h.mape);
+  });
+  const learnedModel = Object.entries(modelMape)
+    .map(([m, vals]) => ({ model: m, avgMape: vals.reduce((a,b)=>a+b,0)/vals.length }))
+    .sort((a, b) => a.avgMape - b.avgMape)[0];
+
+  const mapeColor = (mape) => {
+    if (mape == null) return '#d9d9d9';
+    if (mape <= 15)  return '#52c41a';
+    if (mape <= 30)  return '#faad14';
+    return '#ff4d4f';
+  };
+  const mapeLabel = (mape) => {
+    if (mape == null) return '—';
+    if (mape <= 15)  return 'Tốt';
+    if (mape <= 30)  return 'Trung bình';
+    return 'Kém';
+  };
+
+  return (
+    <div style={{ background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: 8, padding: '12px 16px' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <Text strong style={{ fontSize: 13 }}>
+          <HistoryOutlined style={{ color: '#52c41a', marginRight: 6 }} />
+          Lịch sử tự học — {history.length} lần chạy gần nhất
+        </Text>
+        {learnedModel && evaluated.length >= 2 && (
+          <Tooltip title={`Sau ${evaluated.length} lần đánh giá, ${MODEL_CONFIG[learnedModel.model]?.label || learnedModel.model} có MAPE trung bình thấp nhất (${learnedModel.avgMape.toFixed(1)}%) → được ưu tiên cho lần forecast tiếp theo`}>
+            <span style={{ fontSize: 12, color: '#52c41a', fontWeight: 600, cursor: 'help' }}>
+              <TrophyOutlined /> Đã học: {MODEL_CONFIG[learnedModel.model]?.label || learnedModel.model}
+            </span>
+          </Tooltip>
+        )}
+      </div>
+
+      {!hasHistory ? (
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          Chưa có dữ liệu đánh giá. Hệ thống sẽ so sánh dự báo với thực tế sau 7 ngày và tự cập nhật.
+        </Text>
+      ) : (
+        <>
+          {/* Timeline table */}
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #d9f7be' }}>
+                  <th style={{ padding: '4px 8px', textAlign: 'left', color: '#8c8c8c', fontWeight: 500 }}>Ngày chạy</th>
+                  <th style={{ padding: '4px 8px', textAlign: 'center', color: '#8c8c8c', fontWeight: 500 }}>Model dùng</th>
+                  <th style={{ padding: '4px 8px', textAlign: 'right', color: '#8c8c8c', fontWeight: 500 }}>Dự báo</th>
+                  <th style={{ padding: '4px 8px', textAlign: 'right', color: '#8c8c8c', fontWeight: 500 }}>Thực tế</th>
+                  <th style={{ padding: '4px 8px', textAlign: 'center', color: '#8c8c8c', fontWeight: 500 }}>MAPE</th>
+                  <th style={{ padding: '4px 8px', textAlign: 'center', color: '#8c8c8c', fontWeight: 500 }}>Đánh giá</th>
+                </tr>
+              </thead>
+              <tbody>
+                {history.map((h, idx) => {
+                  const cfg = MODEL_CONFIG[h.modelUsed] || { label: h.modelUsed, color: 'default' };
+                  const isLatest = idx === 0;
+                  return (
+                    <tr key={h.id} style={{ background: isLatest ? '#f6ffed' : 'transparent', borderBottom: '1px solid #f0f0f0' }}>
+                      <td style={{ padding: '5px 8px', color: isLatest ? '#389e0d' : '#595959', fontWeight: isLatest ? 600 : 400 }}>
+                        {h.forecastDate} {isLatest && <Tag color="green" style={{ fontSize: 10, marginLeft: 4 }}>Mới nhất</Tag>}
+                      </td>
+                      <td style={{ padding: '5px 8px', textAlign: 'center' }}>
+                        <Tag color={cfg.color} style={{ margin: 0, fontSize: 11 }}>{cfg.label}</Tag>
+                      </td>
+                      <td style={{ padding: '5px 8px', textAlign: 'right', fontFamily: 'monospace' }}>
+                        {h.predictedDemand7Days ?? '—'}
+                      </td>
+                      <td style={{ padding: '5px 8px', textAlign: 'right', fontFamily: 'monospace' }}>
+                        {h.actualDemand7Days != null ? h.actualDemand7Days : <span style={{ color: '#bfbfbf' }}>chờ 7 ngày</span>}
+                      </td>
+                      <td style={{ padding: '5px 8px', textAlign: 'center' }}>
+                        {h.mape != null ? (
+                          <span style={{ color: mapeColor(h.mape), fontWeight: 600 }}>
+                            {h.mape.toFixed(1)}%
+                          </span>
+                        ) : <span style={{ color: '#bfbfbf' }}>—</span>}
+                      </td>
+                      <td style={{ padding: '5px 8px', textAlign: 'center' }}>
+                        {h.mape != null ? (
+                          <Tag color={h.mape <= 15 ? 'success' : h.mape <= 30 ? 'warning' : 'error'} style={{ fontSize: 10 }}>
+                            {mapeLabel(h.mape)}
+                          </Tag>
+                        ) : <span style={{ color: '#bfbfbf', fontSize: 11 }}>Đang chờ</span>}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Learning progress */}
+          {evaluated.length >= 2 && (
+            <div style={{ marginTop: 10, padding: '8px 12px', background: 'white', borderRadius: 6, borderLeft: '3px solid #52c41a' }}>
+              <Text style={{ fontSize: 12 }}>
+                📈 Hệ thống đã đánh giá <strong>{evaluated.length} lần</strong>.{' '}
+                {learnedModel && (
+                  <>
+                    <Tag color={MODEL_CONFIG[learnedModel.model]?.color || 'default'}>
+                      {MODEL_CONFIG[learnedModel.model]?.label || learnedModel.model}
+                    </Tag>
+                    {' '}đang dẫn đầu với MAPE trung bình{' '}
+                    <strong style={{ color: mapeColor(learnedModel.avgMape) }}>
+                      {learnedModel.avgMape.toFixed(1)}%
+                    </strong>
+                    {evaluated.length >= 3 && ' — sẽ được ưu tiên ở lần forecast kế tiếp.'}
+                    {evaluated.length < 3 && ` — cần thêm ${3 - evaluated.length} lần đánh giá nữa để hệ thống tự động ưu tiên model.`}
+                  </>
+                )}
+              </Text>
+            </div>
+          )}
+        </>
+      )}
+
+      <Text type="secondary" style={{ fontSize: 10, display: 'block', marginTop: 6 }}>
+        * Hệ thống tự so sánh dự báo với xuất kho thực tế sau 7 ngày (chạy lúc 2:30 AM). Sau ≥3 lần đánh giá, model tốt nhất sẽ được ưu tiên tự động.
+      </Text>
+    </div>
+  );
+};
+
 // ─────────────────────────── Expanded Row ────────────────────────────────────
 
 const ExpandedRow = ({ record }) => {
@@ -260,6 +408,11 @@ const ExpandedRow = ({ record }) => {
       {/* Model Selection Reasoning — full width */}
       <Col xs={24}>
         <ModelSelectionPanel record={record} />
+      </Col>
+
+      {/* Accuracy History & Auto-learning — full width */}
+      <Col xs={24}>
+        <AccuracyHistoryPanel productId={record.productId} />
       </Col>
     </Row>
   );

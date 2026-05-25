@@ -39,6 +39,15 @@ public class ForecastController {
     }
 
     /**
+     * Lịch sử 5 lần dự báo gần nhất + accuracy của 1 sản phẩm.
+     * FE dùng để hiển thị panel "Tự học model".
+     */
+    @GetMapping("/product/{productId}/history")
+    public ApiResponse<List<ForecastPredictionResponse>> getProductHistory(@PathVariable Long productId) {
+        return ApiResponse.success(forecastService.getProductHistory(productId));
+    }
+
+    /**
      * Trigger forecast thủ công — dùng để test hoặc khi cần forecast gấp.
      * Chỉ dành cho ADMIN (cấu hình trong SecurityConfig).
      */

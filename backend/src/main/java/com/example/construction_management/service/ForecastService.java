@@ -96,6 +96,15 @@ public class ForecastService {
                 .orElse(null);
     }
 
+    public List<ForecastPredictionResponse> getProductHistory(Long productId) {
+        return forecastPredictionRepository
+                .findHistoryByProductId(productId)
+                .stream()
+                .limit(5)
+                .map(this::mapEntityToResponse)
+                .collect(Collectors.toList());
+    }
+
     // ─────────────────────────── Private helpers ────────────────────────────
 
     private AiForecastRequestDTO.ProductForecastInput buildProductInput(Long productId, LocalDateTime since) {

@@ -15,6 +15,17 @@ public interface ForecastPredictionRepository extends JpaRepository<ForecastPred
 
     Optional<ForecastPrediction> findTopByProductIdOrderByForecastDateDesc(Long productId);
 
+    // Lịch sử 5 ngày gần nhất — mỗi ngày chỉ lấy 1 bản ghi mới nhất (id lớn nhất)
+    @Query("SELECT fp FROM ForecastPrediction fp " +
+           "JOIN FETCH fp.product " +
+           "WHERE fp.id IN (" +
+           "  SELECT MAX(fp2.id) FROM ForecastPrediction fp2 " +
+           "  WHERE fp2.product.id = :productId " +
+           "  GROUP BY fp2.forecastDate" +
+           ") " +
+           "ORDER BY fp.forecastDate DESC")
+    List<ForecastPrediction> findHistoryByProductId(@Param("productId") Long productId);
+
     boolean existsByProductIdAndForecastDate(Long productId, LocalDate forecastDate);
 
     // Feature 1: tìm predictions cần đánh giá accuracy (đã đủ 7 ngày, chưa có MAPE)
