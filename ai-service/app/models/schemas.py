@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from datetime import date, datetime
-from typing import List, Optional
+from typing import Dict, List, Optional
 from enum import Enum
 
 
@@ -26,7 +26,8 @@ class ProductForecastInput(BaseModel):
     ordering_cost: float = 100000.0
     holding_cost_per_unit: float = 500.0
     daily_history: List[DailyData] = []
-    preferred_model: Optional[str] = None  # Feature 2: gợi ý model từ lịch sử accuracy
+    # preferred_model: khi Spring Boot muốn force dùng model cụ thể (override evaluation)
+    preferred_model: Optional[str] = None
 
 
 class ForecastRequest(BaseModel):
@@ -47,6 +48,9 @@ class ProductForecastResult(BaseModel):
     eoq: int
     daily_forecast: List[int]
     model_used: str
+    # MAE của từng model trên validation set (rỗng nếu không đủ data để evaluate)
+    # Ví dụ: {"xgboost": 3.2, "holt_winters": 5.1, "linear_regression": 6.8}
+    model_scores: Dict[str, float] = Field(default_factory=dict)
 
 
 class ForecastResponse(BaseModel):
