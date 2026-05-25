@@ -2,15 +2,14 @@
 Forecast Service — logic dự báo tồn kho.
 
 Chiến lược chọn model (Model Evaluation & Selection):
-  Thay vì chọn cứng theo số ngày, service chạy TẤT CẢ model đủ điều kiện
-  trên một validation window (7 ngày gần nhất), đo MAE, rồi chọn model
-  có sai số thấp nhất để forecast thực sự.
+  Chỉ dùng 2 model: XGBoost và Holt-Winters.
+  Service chạy cả 2 model đủ điều kiện trên validation window 7 ngày gần nhất,
+  đo MAE, chọn model có sai số thấp nhất.
 
   Điều kiện để evaluate (n = số ngày sau fill):
-    >= 60 ngày → thử: XGBoost + Holt-Winters + LinearReg + SMA
-    21–59 ngày → thử: Holt-Winters + LinearReg + SMA
-    14–20 ngày → thử: LinearReg + SMA
-    < 14 ngày  → SMA (không đủ data để tách validation set có ý nghĩa)
+    >= 60 ngày → thử: XGBoost + Holt-Winters
+    21–59 ngày → thử: Holt-Winters
+    < 21 ngày  → Holt-Winters (rule-based, không đủ data để tách val set)
 
   preferred_model (từ Spring Boot): force dùng model đó nếu đủ data,
   bỏ qua evaluation → dùng cho kịch bản "người dùng muốn override".
@@ -42,18 +41,14 @@ VAL_DAYS      = 7      # Số ngày hold-out để đo MAE
 
 # Số ngày tối thiểu toàn bộ series (trước khi tách val) để mỗi model có thể evaluate
 _MODEL_EVAL_MIN = {
-    "xgboost":              60,   # train >= 53 sau val split
-    "holt_winters":         21,   # train >= 14 sau val split
-    "linear_regression":    14,   # train >= 7 sau val split
-    "simple_moving_average": 0,   # luôn chạy được
+    "xgboost":      60,   # train >= 53 sau val split
+    "holt_winters": 21,   # train >= 14 sau val split
 }
 
 # Ngưỡng để dùng model khi bị force (preferred_model / rule-based)
 _MODEL_FORCE_MIN = {
-    "xgboost":              60,
-    "holt_winters":         14,
-    "linear_regression":     7,
-    "simple_moving_average": 0,
+    "xgboost":      60,
+    "holt_winters":  0,   # HW chạy được với mọi lượng data
 }
 
 
@@ -143,7 +138,7 @@ def _select_and_run_model(
             return preds, name, {}
 
     # ── 2. Không đủ data để tách validation set ───────────────────────────────
-    if n < _MODEL_EVAL_MIN["linear_regression"]:   # n < 14
+    if n < _MODEL_EVAL_MIN["holt_winters"]:   # n < 21
         preds, name = _rule_based(df, demand_series, n, horizon)
         return preds, name, {}
 
@@ -181,18 +176,11 @@ def _evaluate_and_select(
     for model_name in candidates:
         try:
             if model_name == "xgboost":
-                # XGBoost cần DataFrame, train trên train_df
                 preds, _ = _forecast_xgboost(train_df, VAL_DAYS)
-            elif model_name == "holt_winters":
+            else:  # holt_winters
                 if n_train < 14:
                     continue
                 preds, _ = _forecast_holt_winters(train_series, VAL_DAYS)
-            elif model_name == "linear_regression":
-                if n_train < 7:
-                    continue
-                preds, _ = _forecast_linear_regression(train_series, VAL_DAYS)
-            else:
-                preds, _ = _forecast_sma(train_series, VAL_DAYS)
 
             mae = float(np.mean(np.abs(np.array(preds[:VAL_DAYS]) - val_actual)))
             scores[model_name] = round(mae, 2)
@@ -241,12 +229,8 @@ def _rule_based(
     """Chọn model theo số ngày — fallback khi không đủ data để evaluate."""
     if n >= 60:
         return _forecast_xgboost(df, horizon)
-    elif n >= 14:
-        return _forecast_holt_winters(demand_series, horizon)
-    elif n >= 7:
-        return _forecast_linear_regression(demand_series, horizon)
     else:
-        return _forecast_sma(demand_series, horizon)
+        return _forecast_holt_winters(demand_series, horizon)
 
 
 # ═══════════════════════════ Forecasting Models ══════════════════════════════
@@ -359,7 +343,7 @@ def _forecast_xgboost(df: pd.DataFrame, horizon: int) -> Tuple[List[float], str]
 
 
 def _forecast_holt_winters(series: np.ndarray, horizon: int) -> Tuple[List[float], str]:
-    """Double Exponential Smoothing — bắt trend. Dùng khi 14–59 ngày."""
+    """Double Exponential Smoothing — bắt trend. Dùng khi < 60 ngày."""
     try:
         from statsmodels.tsa.holtwinters import ExponentialSmoothing
 
@@ -369,29 +353,11 @@ def _forecast_holt_winters(series: np.ndarray, horizon: int) -> Tuple[List[float
         fit = model.fit(optimized=True)
         return fit.forecast(horizon).tolist(), "holt_winters"
     except Exception:
-        return _forecast_sma(series, horizon)
+        # Fallback nội bộ: trung bình 7 ngày gần nhất, vẫn label holt_winters
+        window = min(7, len(series))
+        avg = float(np.mean(series[-window:])) if len(series) > 0 else 0.0
+        return [avg] * horizon, "holt_winters"
 
-
-def _forecast_linear_regression(series: np.ndarray, horizon: int) -> Tuple[List[float], str]:
-    """Linear Regression trên time index. Dùng khi 7–13 ngày."""
-    try:
-        from sklearn.linear_model import LinearRegression
-
-        n = len(series)
-        X = np.arange(n).reshape(-1, 1)
-        model = LinearRegression()
-        model.fit(X, series)
-        future_X = np.arange(n, n + horizon).reshape(-1, 1)
-        return model.predict(future_X).tolist(), "linear_regression"
-    except Exception:
-        return _forecast_sma(series, horizon)
-
-
-def _forecast_sma(series: np.ndarray, horizon: int) -> Tuple[List[float], str]:
-    """Simple Moving Average 3 ngày. Fallback cuối cùng."""
-    window = min(3, len(series))
-    avg = float(np.mean(series[-window:])) if len(series) > 0 else 0.0
-    return [avg] * horizon, "simple_moving_average"
 
 
 # ═══════════════════════ Inventory Calculations ══════════════════════════════

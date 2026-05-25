@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { 
-  Table, Button, Space, Input, Tag, Card, Row, Col, 
+  Table, Button, Space, Input, Tag, Card, Row, Col,
   Statistic, Select, DatePicker, Typography, message, Popconfirm,
-  Modal, Descriptions, Divider, Timeline
+  Modal, Descriptions, Divider, Timeline, Tooltip
 } from 'antd';
 import { 
   PlusOutlined, SearchOutlined, ReloadOutlined,
@@ -161,13 +161,18 @@ const TransactionList = () => {
       title: 'Mã phiếu',
       dataIndex: 'transactionCode',
       key: 'transactionCode',
-      width: 110,
+      width: 140,
       fixed: 'left',
-      render: (code, record) => (
-        <Button type="link" onClick={() => handleViewDetail(record)} style={{ padding: 0, fontWeight: 600 }}>
-          {code || '-'}
-        </Button>
-      )
+      render: (code, record) => {
+        const short = code && code.length > 14 ? code.slice(0, 14) + '…' : (code || '-');
+        return (
+          <Tooltip title={code} placement="right">
+            <Button type="link" onClick={() => handleViewDetail(record)} style={{ padding: 0, fontWeight: 600, fontFamily: 'monospace', fontSize: 12 }}>
+              {short}
+            </Button>
+          </Tooltip>
+        );
+      }
     },
     {
       title: 'Loại',

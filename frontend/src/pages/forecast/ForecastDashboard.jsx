@@ -96,8 +96,11 @@ const ModelSelectionPanel = ({ record }) => {
     );
   }
 
-  // Sort models by MAE ascending (best first)
-  const sorted = Object.entries(scores).sort(([, a], [, b]) => a - b);
+  // Sort models by MAE ascending (best first) — ẩn SMA và Linear Regression tạm thời
+  const HIDDEN_MODELS = ['simple_moving_average', 'linear_regression'];
+  const sorted = Object.entries(scores)
+    .filter(([model]) => !HIDDEN_MODELS.includes(model))
+    .sort(([, a], [, b]) => a - b);
   const bestMAE = sorted[0]?.[1] ?? 0;
   const maxMAE  = sorted[sorted.length - 1]?.[1] ?? 1;
 
@@ -125,7 +128,7 @@ const ModelSelectionPanel = ({ record }) => {
         marginBottom: 10, borderLeft: '3px solid #722ed1',
       }}>
         <Text style={{ fontSize: 12 }}>
-          Hệ thống đã chạy <strong>{sorted.length} model</strong> trên 7 ngày validation gần nhất.{' '}
+          Hệ thống đã chạy <strong>{Object.keys(scores).length} model</strong> trên 7 ngày validation gần nhất.{' '}
           <Tag color={winnerCfg.color} style={{ margin: '0 2px' }}>{winnerCfg.label}</Tag>
           {' '}có sai số thấp nhất <strong>(MAE = {winnerMAE?.toFixed(2)})</strong>
           {runnerUp && (

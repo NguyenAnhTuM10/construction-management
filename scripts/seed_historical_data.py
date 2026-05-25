@@ -282,19 +282,33 @@ def _reset_seed_data(cur, conn):
     print("Xóa seed data cũ...")
     codes = [p[0] for p in PRODUCTS]
 
-    # Xóa transactions seed trước (an toàn, không có FK conflict)
-    cur.execute("""
-        DELETE ti FROM inventory_transaction_items ti
-        JOIN inventory_transactions t ON ti.transaction_id = t.id
-        WHERE t.transaction_code LIKE 'PX-SEED-%'
-    """)
-    cur.execute("DELETE FROM inventory_transactions WHERE transaction_code LIKE 'PX-SEED-%'")
-
-    # Tắt FK check tạm để xóa products (có thể bị tham chiếu bởi order_items/forecast_predictions)
     cur.execute("SET FOREIGN_KEY_CHECKS = 0")
+
     if codes:
         placeholders = ",".join(["%s"] * len(codes))
+
+        # Xóa transaction_items trỏ vào products seed (bất kể transaction_code format nào)
+        cur.execute(f"""
+            DELETE iti FROM inventory_transaction_items iti
+            JOIN products p ON iti.product_id = p.id
+            WHERE p.code IN ({placeholders})
+        """, codes)
+
+        # Xóa transactions không còn items nào
+        cur.execute("""
+            DELETE t FROM inventory_transactions t
+            LEFT JOIN inventory_transaction_items iti ON iti.transaction_id = t.id
+            WHERE iti.id IS NULL
+        """)
+
+        # Xóa inventory_balances trỏ vào products sắp bị xóa
+        cur.execute(f"DELETE ib FROM inventory_balances ib JOIN products p ON ib.product_id = p.id WHERE p.code IN ({placeholders})", codes)
+
+        # Xóa forecast_predictions trỏ vào products sắp bị xóa
+        cur.execute(f"DELETE fp FROM forecast_predictions fp JOIN products p ON fp.product_id = p.id WHERE p.code IN ({placeholders})", codes)
+
         cur.execute(f"DELETE FROM products WHERE code IN ({placeholders})", codes)
+
     cur.execute("DELETE FROM categories WHERE id IN (1, 2, 3)")
     cur.execute("DELETE FROM warehouses WHERE code = 'KHO-MAIN'")
     cur.execute("SET FOREIGN_KEY_CHECKS = 1")
